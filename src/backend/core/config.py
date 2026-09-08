@@ -1,0 +1,61 @@
+"""Application configuration loaded from environment variables."""
+
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+
+class Settings(BaseSettings):
+    """Runtime settings. Secrets come from environment only."""
+
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    app_name: str = "AI Career Agent"
+    app_env: str = "development"
+    debug: bool = False
+    log_level: str = "INFO"
+
+    database_url: str = Field(
+        default="postgresql+asyncpg://ai_career_agent:password@localhost:5432/ai_career_agent",
+        alias="DATABASE_URL",
+    )
+    database_echo: bool = False
+
+    redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
+
+    secret_key: str = Field(default="change-me-in-production", alias="SECRET_KEY")
+    encryption_key: str | None = Field(default=None, alias="ENCRYPTION_KEY")
+
+    access_token_expire_minutes: int = 60 * 24  # 1 day
+
+    storage_provider: str = Field(default="local", alias="STORAGE_PROVIDER")
+    storage_local_path: Path = Field(
+        default=PROJECT_ROOT / "data" / "uploads", alias="STORAGE_LOCAL_PATH"
+    )
+    storage_endpoint: str | None = Field(default=None, alias="STORAGE_ENDPOINT")
+    storage_access_key: str | None = Field(default=None, alias="STORAGE_ACCESS_KEY")
+    storage_secret_key: str | None = Field(default=None, alias="STORAGE_SECRET_KEY")
+    storage_bucket: str = Field(default="ai-career-agent-documents", alias="STORAGE_BUCKET")
+    storage_region: str = Field(default="us-east-1", alias="STORAGE_REGION")
+    storage_encrypt_files: bool = Field(default=True, alias="STORAGE_ENCRYPT_FILES")
+
+    max_upload_size_bytes: int = 10 * 1024 * 1024  # 10 MB
+    allowed_resume_extensions: set[str] = {"pdf", "docx"}
+
+    profile_completeness_weights: str = Field(
+        default="basic=15,summary=10,experience=20,skills=15,education=10,certifications=5,preferences=15,resumes=10",
+        alias="PROFILE_COMPLETENESS_WEIGHTS",
+    )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

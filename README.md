@@ -2,7 +2,8 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phase 0 — Project foundation and architecture.  
+> **Status:** Phase 1 — Candidate Profile backend foundation in progress.  
+> Project foundation and architecture (Phase 0) plus the Phase 1 backend: schema, migration, REST API, and tests.  
 > No application automation, scraping, or production integrations are implemented yet.
 
 ## Vision
@@ -40,10 +41,42 @@ The agent operates 24×7 in the cloud, but the user remains in control. Sensitiv
 | `docs/agents/` | Agent-specific design notes |
 | `docs/workflows/` | Step-by-step process flows |
 | `docs/security/` | Threat model and compliance notes |
-| `src/` | Application source (created in later phases) |
+| `src/` | Application source — `src/backend/` holds the Phase 1 backend |
 | `tests/` | Test suites |
 | `config/` | Configuration templates and examples |
 | `scripts/` | Development and operational scripts |
+
+## Phase 1 — Candidate Profile (backend foundation)
+
+The backend foundation for the Candidate Profile Service is implemented in `src/backend/`:
+
+- `models/` — `Candidate`, `CandidateSkill`, `Experience`, `Education`, `Certification`, `Resume`, `ResumeVersion`, `User` (SQLModel).
+- `schemas/` — request/response models and validation.
+- `repositories/` — persistence layer for profiles, resumes, experience, education, certifications, users, and audit.
+- `services/` — profile completeness scoring and resume parsing (PDF/DOCX).
+- `api/` — FastAPI routers under `/api/v1`.
+- `db/` — SQLAlchemy async engine/session and `EncryptedString` PII type decorator.
+- `core/` — settings, security, and audit helpers.
+
+Database migrations live in `migrations/` (Alembic, async template). Run them with:
+
+```bash
+alembic upgrade head
+```
+
+Run the API locally:
+
+```bash
+uvicorn backend.app.main:app --reload
+```
+
+Run the quality gates:
+
+```bash
+pytest            # tests use SQLite + aiosqlite via tests/conftest.py
+ruff check src tests
+mypy src
+```
 
 ## MVP Scope
 
