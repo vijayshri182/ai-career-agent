@@ -1,0 +1,35 @@
+# Celery Beat schedules
+# Frequencies are examples; adjust based on source policies and rate limits.
+
+discover_jobs:
+  task: agents.discovery.run_discovery
+  schedule: 21600  # every 6 hours
+  kwargs:
+    source_ids: []
+
+verify_jobs:
+  task: agents.verification.verify_unverified_jobs
+  schedule: 1800  # every 30 minutes
+  kwargs: {}
+
+match_jobs:
+  task: agents.matching.match_verified_jobs
+  schedule: 1800  # every 30 minutes
+  kwargs: {}
+
+cleanup_expired_jobs:
+  task: agents.discovery.cleanup_expired_jobs
+  schedule: 86400  # daily
+  kwargs:
+    max_age_days: 45
+
+send_approval_reminders:
+  task: services.approval.send_reminders
+  schedule: 3600  # hourly
+  kwargs:
+    reminder_after_minutes: 240
+
+weekly_learning_report:
+  task: agents.learning.generate_weekly_report
+  schedule: 604800  # weekly
+  kwargs: {}

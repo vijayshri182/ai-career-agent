@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: AI Career Agent API
+  version: 0.1.0
+  description: |
+    Placeholder OpenAPI specification for the AI Career Agent.
+    FastAPI will generate the authoritative spec once the application is implemented.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /profiles:
+    post:
+      summary: Create candidate profile
+      responses:
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+  /jobs:
+    get:
+      summary: List jobs
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []

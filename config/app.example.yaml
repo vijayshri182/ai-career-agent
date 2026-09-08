@@ -1,0 +1,84 @@
+# AI Career Agent — Application Configuration Example
+# Copy this file and fill in real values. Do NOT commit secrets.
+
+app:
+  name: ai-career-agent
+  env: development
+  debug: false
+  log_level: INFO
+
+auth:
+  # OAuth2 / OIDC provider configuration
+  provider: auth0  # auth0, google, github, generic
+  issuer_url: https://your-domain.auth0.com/
+  client_id: YOUR_CLIENT_ID
+  client_secret: ${AUTH_CLIENT_SECRET}
+  redirect_uri: http://localhost:3000/api/auth/callback
+  scopes:
+    - openid
+    - profile
+    - email
+
+database:
+  url: ${DATABASE_URL}
+  # Example: postgresql+asyncpg://user:password@localhost:5432/ai_career_agent
+  echo_sql: false
+
+redis:
+  url: ${REDIS_URL}
+  # Example: redis://localhost:6379/0
+
+vector_store:
+  # Using pgvector via PostgreSQL by default
+  enabled: true
+  embedding_dimension: 1536
+  table_name: embeddings
+
+object_storage:
+  provider: s3  # s3, minio, gcs
+  bucket: ai-career-agent-documents
+  endpoint_url: ${OBJECT_STORAGE_ENDPOINT}
+  access_key_id: ${OBJECT_STORAGE_ACCESS_KEY}
+  secret_access_key: ${OBJECT_STORAGE_SECRET_KEY}
+  region: us-east-1
+
+llm:
+  default_provider: openai  # openai, anthropic, google, ollama
+  default_model: gpt-4o-mini
+  fallback_model: gpt-3.5-turbo
+  api_key: ${LLM_API_KEY}
+  max_tokens_per_call: 2000
+  temperature: 0.2
+
+browser:
+  provider: playwright
+  headless: true
+  timeout_ms: 30000
+  # CAPTCHA/MFA detection immediately stops the run
+  stop_on_captcha: true
+  stop_on_mfa: true
+
+notifications:
+  email_provider: smtp  # smtp, sendgrid, aws_ses
+  smtp_host: ${SMTP_HOST}
+  smtp_port: 587
+  smtp_user: ${SMTP_USER}
+  smtp_password: ${SMTP_PASSWORD}
+  from_address: ai-career-agent@example.com
+
+outreach:
+  daily_send_cap: 5
+  require_approval: true
+
+matching:
+  min_score_for_notification: 75
+  weights:
+    skills: 0.30
+    experience: 0.20
+    seniority: 0.15
+    domain: 0.15
+    location: 0.10
+    ai_relevance: 0.10
+
+audit:
+  retention_days: 2555  # 7 years
