@@ -11,6 +11,7 @@ from backend.core.config import Settings, get_settings
 from backend.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from backend.core.security_service import get_security_service
 from backend.db.engine import make_engine, make_session_factory
+from backend.models.candidate import Candidate
 from backend.models.user import User
 from backend.repositories.audit import AuditRepository
 from backend.repositories.candidate import CandidateRepository
@@ -86,6 +87,23 @@ async def get_current_user(
     return user
 
 
+async def get_owned_candidate(
+    candidate_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+) -> Candidate:
+    """Resolve candidate_id to the authenticated user's own candidate.
+
+    Applies to every sub-resource route so cross-user and non-existent
+    candidates are indistinguishable (404). Reuses the existing
+    CandidateRepository.get_for_user_or_404 authorization rule.
+    """
+    try:
+        return await CandidateRepository(session).get_for_user_or_404(candidate_id, user_id)
+    except Exception as exc:
+        raise handle_domain_error(exc) from exc
+
+
 async def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
     return AuthService(UserRepository(session))
 
@@ -99,25 +117,41 @@ async def get_candidate_service(session: AsyncSession = Depends(get_session)) ->
 
 
 async def get_skill_service(session: AsyncSession = Depends(get_session)) -> SkillService:
-    return SkillService(SkillRepository(session), AuditRepository(session))
+    return SkillService(
+        SkillRepository(session),
+        AuditRepository(session),
+        CandidateRepository(session),
+    )
 
 
 async def get_experience_service(
     session: AsyncSession = Depends(get_session),
 ) -> ExperienceService:
-    return ExperienceService(ExperienceRepository(session), AuditRepository(session))
+    return ExperienceService(
+        ExperienceRepository(session),
+        AuditRepository(session),
+        CandidateRepository(session),
+    )
 
 
 async def get_education_service(
     session: AsyncSession = Depends(get_session),
 ) -> EducationService:
-    return EducationService(EducationRepository(session), AuditRepository(session))
+    return EducationService(
+        EducationRepository(session),
+        AuditRepository(session),
+        CandidateRepository(session),
+    )
 
 
 async def get_certification_service(
     session: AsyncSession = Depends(get_session),
 ) -> CertificationService:
-    return CertificationService(CertificationRepository(session), AuditRepository(session))
+    return CertificationService(
+        CertificationRepository(session),
+        AuditRepository(session),
+        CandidateRepository(session),
+    )
 
 
 async def get_resume_service(session: AsyncSession = Depends(get_session)) -> ResumeService:
@@ -127,6 +161,8 @@ async def get_resume_service(session: AsyncSession = Depends(get_session)) -> Re
         ResumeVersionRepository(session),
         ParsedResumeRepository(session),
         AuditRepository(session),
+        CandidateRepository(session),
+        SkillRepository(session),
         storage=make_storage(settings),
         settings=settings,
     )

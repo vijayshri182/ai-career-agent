@@ -10,13 +10,16 @@ from fastapi import UploadFile
 
 from backend.core.config import Settings
 from backend.core.exceptions import NotFoundError, ValidationError
+from backend.models.candidate import Candidate
 from backend.models.resume import ParsedResume, Resume, ResumeStatus, ResumeType, ResumeVersion
 from backend.repositories.audit import AuditRepository
+from backend.repositories.candidate import CandidateRepository
 from backend.repositories.resume import (
     ParsedResumeRepository,
     ResumeRepository,
     ResumeVersionRepository,
 )
+from backend.repositories.skill import SkillRepository
 from backend.schemas.resume import ResumeCreate, ResumeUpdate
 from backend.services.parser import BasicResumeParser, ResumeParser
 from backend.services.storage import FileStorage
@@ -35,6 +38,8 @@ class ResumeService:
         version_repo: ResumeVersionRepository,
         parsed_repo: ParsedResumeRepository,
         audit_repo: AuditRepository,
+        candidate_repo: CandidateRepository,
+        skill_repo: SkillRepository,
         storage: FileStorage,
         parser: ResumeParser | None = None,
         settings: Settings | None = None,
@@ -43,14 +48,23 @@ class ResumeService:
         self.version_repo = version_repo
         self.parsed_repo = parsed_repo
         self.audit_repo = audit_repo
+        self.candidate_repo = candidate_repo
+        self.skill_repo = skill_repo
         self.storage = storage
         self.parser = parser or BasicResumeParser()
         self.settings = settings or __import__("backend.core.config", fromlist=["get_settings"]).get_settings()
 
-    async def list_resumes(self, candidate_id: UUID) -> list[Resume]:
+    async def _assert_candidate_owned(self, candidate_id: UUID, user_id: UUID) -> None:
+        await self.candidate_repo.get_for_user_or_404(candidate_id, user_id)
+
+    async def list_resumes(self, candidate_id: UUID, user_id: UUID) -> list[Resume]:
+        await self._assert_candidate_owned(candidate_id, user_id)
         return await self.resume_repo.list_active(candidate_id)
 
-    async def get_resume(self, candidate_id: UUID, resume_id: UUID) -> Resume:
+    async def get_resume(
+        self, candidate_id: UUID, user_id: UUID, resume_id: UUID
+    ) -> Resume:
+        await self._assert_candidate_owned(candidate_id, user_id)
         resume = await self.resume_repo.get_with_active_version(resume_id)
         if resume is None or resume.candidate_id != candidate_id:
             raise NotFoundError("Resume not found")
@@ -59,6 +73,7 @@ class ResumeService:
     async def create_resume(
         self, candidate_id: UUID, user_id: UUID, data: ResumeCreate
     ) -> Resume:
+        await self._assert_candidate_owned(candidate_id, user_id)
         resume = await self.resume_repo.create(
             candidate_id=candidate_id,
             name=data.name,
@@ -80,7 +95,7 @@ class ResumeService:
     async def update_resume(
         self, candidate_id: UUID, user_id: UUID, resume_id: UUID, data: ResumeUpdate
     ) -> Resume:
-        resume = await self.get_resume(candidate_id, resume_id)
+        resume = await self.get_resume(candidate_id, user_id, resume_id)
         resume = await self.resume_repo.update(resume, **data.model_dump(exclude_unset=True))
         await self.audit_repo.log(
             event_type="RESUME_UPDATED",
@@ -92,7 +107,7 @@ class ResumeService:
         return resume
 
     async def delete_resume(self, candidate_id: UUID, user_id: UUID, resume_id: UUID) -> None:
-        resume = await self.get_resume(candidate_id, resume_id)
+        resume = await self.get_resume(candidate_id, user_id, resume_id)
         for version in resume.versions:
             if version.storage_path:
                 with contextlib.suppress(FileNotFoundError):
@@ -113,11 +128,12 @@ class ResumeService:
         resume_id: UUID | None,
         file: UploadFile,
     ) -> ResumeVersion:
+        await self._assert_candidate_owned(candidate_id, user_id)
         content = await file.read()
         await self._validate_upload(content, file.filename, file.content_type)
 
         if resume_id:
-            resume = await self.get_resume(candidate_id, resume_id)
+            resume = await self.get_resume(candidate_id, user_id, resume_id)
         else:
             resume = await self.resume_repo.create(
                 candidate_id=candidate_id,
@@ -184,7 +200,7 @@ class ResumeService:
     async def parse_resume(
         self, candidate_id: UUID, user_id: UUID, resume_id: UUID
     ) -> ParsedResume:
-        resume = await self.get_resume(candidate_id, resume_id)
+        resume = await self.get_resume(candidate_id, user_id, resume_id)
         active_version = await self.version_repo.get(resume.active_version_id) if resume.active_version_id else None
         if active_version is None:
             raise NotFoundError("Resume has no uploaded version")
@@ -200,6 +216,7 @@ class ResumeService:
                 extracted_data=parsed_data.to_dict(),
                 status="pending",
                 confidence_score=None,
+                applied_fields=[],
             )
         else:
             parsed = await self.parsed_repo.create(
@@ -226,9 +243,9 @@ class ResumeService:
         return parsed
 
     async def get_parsed_resume(
-        self, candidate_id: UUID, resume_id: UUID
+        self, candidate_id: UUID, user_id: UUID, resume_id: UUID
     ) -> ParsedResume:
-        resume = await self.get_resume(candidate_id, resume_id)
+        resume = await self.get_resume(candidate_id, user_id, resume_id)
         active_version = await self.version_repo.get(resume.active_version_id) if resume.active_version_id else None
         if active_version is None:
             raise NotFoundError("Resume has no uploaded version")
@@ -240,11 +257,28 @@ class ResumeService:
     async def apply_parsed_resume(
         self, candidate_id: UUID, user_id: UUID, resume_id: UUID
     ) -> ParsedResume:
-        parsed = await self.get_parsed_resume(candidate_id, resume_id)
+        parsed = await self.get_parsed_resume(candidate_id, user_id, resume_id)
+        candidate = await self.candidate_repo.get_for_user_or_404(candidate_id, user_id)
+
+        already_applied = set(parsed.applied_fields or [])
+        profile_changes = self._profile_fields_from_extraction(parsed.extracted_data)
+        pending_changes = {
+            field: value
+            for field, value in profile_changes.items()
+            if field not in already_applied
+        }
+        if pending_changes:
+            candidate = await self.candidate_repo.update_candidate(candidate, **pending_changes)
+        added_skills = await self._apply_extracted_skills(
+            candidate, parsed.extracted_data
+        )
+
+        applied_fields = sorted(set(profile_changes.keys()) | already_applied)
         parsed = await self.parsed_repo.update(
             parsed,
             status="applied",
             applied_at=datetime.now(UTC),
+            applied_fields=applied_fields,
         )
         await self.audit_repo.log(
             event_type="RESUME_PARSED_APPLIED",
@@ -252,5 +286,57 @@ class ResumeService:
             candidate_id=candidate_id,
             entity_type="ParsedResume",
             entity_id=parsed.id,
+            metadata={
+                "profile_fields": list(pending_changes.keys()),
+                "skills_added": added_skills,
+            },
         )
         return parsed
+
+    @staticmethod
+    def _profile_fields_from_extraction(
+        extracted: dict[str, object],
+    ) -> dict[str, object]:
+        """Map confirmed extraction fields to candidate profile fields.
+
+        Only non-empty values are applied; existing profile data is never
+        overwritten with blank extraction output and nothing is invented.
+        """
+        mapping = {
+            "name": "full_name",
+            "email": "email",
+            "phone": "phone",
+            "summary": "summary",
+        }
+        changes: dict[str, object] = {}
+        for source, target in mapping.items():
+            value = extracted.get(source)
+            if isinstance(value, str) and value.strip():
+                changes[target] = value.strip()
+        return changes
+
+    async def _apply_extracted_skills(
+        self, candidate: Candidate, extracted: dict[str, object]
+    ) -> list[str]:
+        """Merge extracted skills into the candidate without duplicates."""
+        raw_skills = extracted.get("skills")
+        skill_names = [
+            str(name).strip()
+            for name in (raw_skills if isinstance(raw_skills, list) else [])
+            if isinstance(name, str) and name.strip()
+        ]
+        if not skill_names:
+            return []
+
+        existing = await self.skill_repo.list(candidate_id=candidate.id)
+        existing_names = {skill.name.strip().lower() for skill in existing}
+
+        added: list[str] = []
+        for name in skill_names:
+            key = name.lower()
+            if key in existing_names:
+                continue
+            await self.skill_repo.create(candidate_id=candidate.id, name=name)
+            existing_names.add(key)
+            added.append(name)
+        return added

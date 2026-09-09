@@ -4,7 +4,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from backend.api.deps import get_current_user_id, get_resume_service, handle_domain_error
+from backend.api.deps import (
+    get_current_user_id,
+    get_owned_candidate,
+    get_resume_service,
+    handle_domain_error,
+)
 from backend.schemas.resume import (
     ApplyParsedResumeRequest,
     ParsedResumeRead,
@@ -18,16 +23,21 @@ from backend.services.resume import ResumeService
 router = APIRouter(prefix="/candidates/{candidate_id}/resumes", tags=["resumes"])
 
 
-@router.get("", response_model=list[ResumeRead])
+@router.get("", response_model=list[ResumeRead], dependencies=[Depends(get_owned_candidate)])
 async def list_resumes(
     candidate_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     service: ResumeService = Depends(get_resume_service),
 ):
-    return await service.list_resumes(candidate_id)
+    return await service.list_resumes(candidate_id, user_id)
 
 
-@router.post("", response_model=ResumeRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ResumeRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def create_resume(
     candidate_id: UUID,
     data: ResumeCreate,
@@ -41,7 +51,11 @@ async def create_resume(
     return resume
 
 
-@router.put("/{resume_id}", response_model=ResumeRead)
+@router.put(
+    "/{resume_id}",
+    response_model=ResumeRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def update_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -56,7 +70,11 @@ async def update_resume(
     return resume
 
 
-@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{resume_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def delete_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -70,7 +88,12 @@ async def delete_resume(
     return None
 
 
-@router.post("/{resume_id}/upload", response_model=ResumeVersionRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{resume_id}/upload",
+    response_model=ResumeVersionRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def upload_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -85,7 +108,12 @@ async def upload_resume(
     return version
 
 
-@router.post("/upload", response_model=ResumeVersionRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload",
+    response_model=ResumeVersionRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def upload_new_resume(
     candidate_id: UUID,
     file: UploadFile = File(...),
@@ -99,7 +127,11 @@ async def upload_new_resume(
     return version
 
 
-@router.post("/{resume_id}/parse", response_model=ParsedResumeRead)
+@router.post(
+    "/{resume_id}/parse",
+    response_model=ParsedResumeRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def parse_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -113,7 +145,11 @@ async def parse_resume(
     return parsed
 
 
-@router.get("/{resume_id}/parse", response_model=ParsedResumeRead)
+@router.get(
+    "/{resume_id}/parse",
+    response_model=ParsedResumeRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def get_parsed_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -121,13 +157,17 @@ async def get_parsed_resume(
     service: ResumeService = Depends(get_resume_service),
 ):
     try:
-        parsed = await service.get_parsed_resume(candidate_id, resume_id)
+        parsed = await service.get_parsed_resume(candidate_id, user_id, resume_id)
     except Exception as exc:
         raise handle_domain_error(exc) from exc
     return parsed
 
 
-@router.post("/{resume_id}/apply-parsed", response_model=ParsedResumeRead)
+@router.post(
+    "/{resume_id}/apply-parsed",
+    response_model=ParsedResumeRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def apply_parsed_resume(
     candidate_id: UUID,
     resume_id: UUID,
@@ -136,7 +176,7 @@ async def apply_parsed_resume(
     service: ResumeService = Depends(get_resume_service),
 ):
     try:
-        if not request.confirm:
+        if request.confirm is not True:
             from backend.core.exceptions import ValidationError
 
             raise ValidationError("Confirmation required to apply parsed data")

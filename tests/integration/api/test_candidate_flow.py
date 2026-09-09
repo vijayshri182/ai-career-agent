@@ -199,7 +199,7 @@ async def test_resume_upload_parse_and_apply(client: AsyncClient, candidate, aut
     assert r.status_code == 200
 
     r = await client.post(
-        f"/api/v1/candidates/{candidate.id}/resumes/{resume_id}/apply-parsed",
+        f"/api/v1/candidates/{candidate.id}/resumes/{resume_id}/apply-parsed?confirm=true",
         headers=auth_headers,
     )
     assert r.status_code == 200

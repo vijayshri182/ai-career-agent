@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from backend.api.deps import (
     get_certification_service,
     get_current_user_id,
+    get_owned_candidate,
     handle_domain_error,
 )
 from backend.schemas.certification import (
@@ -19,16 +20,25 @@ from backend.services.certification import CertificationService
 router = APIRouter(prefix="/candidates/{candidate_id}/certifications", tags=["certifications"])
 
 
-@router.get("", response_model=list[CertificationRead])
+@router.get(
+    "",
+    response_model=list[CertificationRead],
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def list_certifications(
     candidate_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     service: CertificationService = Depends(get_certification_service),
 ):
-    return await service.list(candidate_id)
+    return await service.list(candidate_id, user_id)
 
 
-@router.post("", response_model=CertificationRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=CertificationRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def add_certification(
     candidate_id: UUID,
     data: CertificationCreate,
@@ -42,7 +52,11 @@ async def add_certification(
     return cert
 
 
-@router.put("/{certification_id}", response_model=CertificationRead)
+@router.put(
+    "/{certification_id}",
+    response_model=CertificationRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def update_certification(
     candidate_id: UUID,
     certification_id: UUID,
@@ -57,7 +71,11 @@ async def update_certification(
     return cert
 
 
-@router.delete("/{certification_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{certification_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def delete_certification(
     candidate_id: UUID,
     certification_id: UUID,

@@ -65,4 +65,4 @@ class ParsedResumeRead(BaseModel):
 
 
 class ApplyParsedResumeRequest(BaseModel):
-    confirm: bool = True
+    confirm: bool | None = None

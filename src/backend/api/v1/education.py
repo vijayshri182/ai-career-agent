@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from backend.api.deps import (
     get_current_user_id,
     get_education_service,
+    get_owned_candidate,
     handle_domain_error,
 )
 from backend.schemas.education import EducationCreate, EducationRead, EducationUpdate
@@ -15,16 +16,21 @@ from backend.services.education import EducationService
 router = APIRouter(prefix="/candidates/{candidate_id}/education", tags=["education"])
 
 
-@router.get("", response_model=list[EducationRead])
+@router.get("", response_model=list[EducationRead], dependencies=[Depends(get_owned_candidate)])
 async def list_education(
     candidate_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     service: EducationService = Depends(get_education_service),
 ):
-    return await service.list(candidate_id)
+    return await service.list(candidate_id, user_id)
 
 
-@router.post("", response_model=EducationRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EducationRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def add_education(
     candidate_id: UUID,
     data: EducationCreate,
@@ -38,7 +44,11 @@ async def add_education(
     return edu
 
 
-@router.put("/{education_id}", response_model=EducationRead)
+@router.put(
+    "/{education_id}",
+    response_model=EducationRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def update_education(
     candidate_id: UUID,
     education_id: UUID,
@@ -53,7 +63,11 @@ async def update_education(
     return edu
 
 
-@router.delete("/{education_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{education_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def delete_education(
     candidate_id: UUID,
     education_id: UUID,

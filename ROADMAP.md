@@ -50,6 +50,8 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * `PUT /api/v1/profiles/{id}`
   * `POST /api/v1/profiles/{id}/resumes`
   * `GET /api/v1/profiles/{id}/resumes`
+  * > Implemented under `/api/v1/candidates[/{candidate_id}]` (profile CRUD) and `/api/v1/candidates/{candidate_id}/...` (skills, experience, education, certifications, resumes, preferences, profile). This roadmap page predates the `candidate`-based resource naming used by the code.
+  * > Phase 1 hardening: service-layer ownership checks reuse `CandidateRepository.get_for_user_or_404` (404 for cross-user/non-existent candidates) as defense-in-depth beneath the HTTP dependency; `apply-parsed` requires explicit `confirm=true` (400 + no mutation otherwise) and tracks `ParsedResume.applied_fields` so re-applying never overwrites manual profile edits; skill merging stays case-insensitive and idempotent.
 * **Database changes:** Add `candidates`, `candidate_skills`, `experiences`, `educations`, `certifications`, `resumes`, `resume_versions`.
 * **Tests:**
   * Unit tests for profile model validation.

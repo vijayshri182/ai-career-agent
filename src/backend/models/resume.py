@@ -108,5 +108,8 @@ class ParsedResume(IdModel, table=True):
     applied_at: datetime | None = Field(
         sa_column=Column(DateTime(timezone=True), nullable=True)
     )
+    applied_fields: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, default=list)
+    )
 
     resume_version: ResumeVersion = Relationship()

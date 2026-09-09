@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from backend.api.deps import (
     get_current_user_id,
     get_experience_service,
+    get_owned_candidate,
     handle_domain_error,
 )
 from backend.schemas.experience import ExperienceCreate, ExperienceRead, ExperienceUpdate
@@ -15,16 +16,21 @@ from backend.services.experience import ExperienceService
 router = APIRouter(prefix="/candidates/{candidate_id}/experience", tags=["experience"])
 
 
-@router.get("", response_model=list[ExperienceRead])
+@router.get("", response_model=list[ExperienceRead], dependencies=[Depends(get_owned_candidate)])
 async def list_experience(
     candidate_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
     service: ExperienceService = Depends(get_experience_service),
 ):
-    return await service.list(candidate_id)
+    return await service.list(candidate_id, user_id)
 
 
-@router.post("", response_model=ExperienceRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ExperienceRead,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def add_experience(
     candidate_id: UUID,
     data: ExperienceCreate,
@@ -38,7 +44,11 @@ async def add_experience(
     return exp
 
 
-@router.put("/{experience_id}", response_model=ExperienceRead)
+@router.put(
+    "/{experience_id}",
+    response_model=ExperienceRead,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def update_experience(
     candidate_id: UUID,
     experience_id: UUID,
@@ -53,7 +63,11 @@ async def update_experience(
     return exp
 
 
-@router.delete("/{experience_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{experience_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(get_owned_candidate)],
+)
 async def delete_experience(
     candidate_id: UUID,
     experience_id: UUID,
