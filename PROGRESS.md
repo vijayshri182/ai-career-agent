@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `fa0acd1` (`feat: add phase 1 frontend`) |
+| HEAD SHA | `ec9fee7` (`feat: implement job discovery foundation`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -25,7 +25,7 @@
 | WS-3 | Phase 1 — hardening: service-layer ownership, safe re-apply, explicit confirmation | Complete, 49 tests | `fe8aa29` `feat: complete phase 1 candidate profile foundation` |
 | WS-4 | Phase 1 — authentication & challenge management foundation (provider-neutral auth state, challenges, workflows, secret references) | Complete | `73b5506` `feat: add authentication and challenge management foundation` |
 | WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
-| WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; pending commit | **NOT committed** (current working tree) |
+| WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
 
 ---
 
@@ -94,8 +94,8 @@ groups lacking allow/disallow; discovery tests created sources disabled (must en
 
 ### Commit Status / Next Step
 
-- WS-6 feature + docs: **NOT committed** — commit (e.g. `feat: implement job discovery foundation`),
-  push `origin/main`, verify `HEAD == origin/main` and clean tree.
+- WS-6 committed + pushed: `ec9fee7` `feat: implement job discovery foundation`; `HEAD == origin/main`,
+  working tree clean.
 
 ### Known Risks / Issues
 
@@ -108,10 +108,10 @@ groups lacking allow/disallow; discovery tests created sources disabled (must en
 
 ## Next Workstream
 
-1. **Commit + push WS-6** (current working tree) and verify clean tree / `HEAD == origin/main`.
+1. **Commit + push the PROGRESS.md checkpoint update** (current working tree).
 2. **Phase 3 — Applying** — not started, not approved.
 
 ## Next Workstream Status
 
 - Approved: **YES for commit/push of WS-6** (Phase 2 completion checkpoint per plan).
-- Started: **NO** (Phase 3 not started until WS-6 is committed and verified).
+- Started: **NO** (Phase 3 not started until the checkpoint update is committed and verified).
