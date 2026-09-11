@@ -15,8 +15,13 @@ class ResumeRepository(BaseRepository[Resume]):
         super().__init__(session, Resume)
 
     async def list_active(self, candidate_id: UUID) -> list[Resume]:
-        stmt = select(Resume).where(
-            Resume.candidate_id == candidate_id, Resume.status != ResumeStatus.DELETED
+        stmt = (
+            select(Resume)
+            .where(
+                Resume.candidate_id == candidate_id,
+                Resume.status != ResumeStatus.DELETED,
+            )
+            .options(selectinload(Resume.versions))
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

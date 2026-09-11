@@ -2,10 +2,9 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phase 1 — Candidate Profile backend foundation complete; Authentication & Challenge Management foundation complete.
-> Project foundation and architecture (Phase 0) plus the Phase 1 backend (schema, migration, REST API, tests) and the
-> Authentication & Challenge Management foundation (provider-neutral auth state, human-verification challenges,
-> human-in-the-loop workflows, secret references).
+> **Status:** Phase 1 — Candidate Profile backend foundation, Authentication & Challenge Management foundation, and
+> the Phase 1 frontend (Next.js) are complete. All profile, resume, authentication, and challenge-management
+> functionality is exercised through the web UI against the REST API.
 > No application automation, scraping, or production integrations are implemented yet.
 
 ## Vision
@@ -44,7 +43,7 @@ The agent operates 24×7 in the cloud, but the user remains in control. Sensitiv
 | `docs/workflows/` | Step-by-step process flows |
 | `docs/security/` | Threat model and compliance notes |
 | `docs/architecture/authentication-and-challenges.md` | Auth state machine, challenge workflow, secrets-references design |
-| `src/` | Application source — `src/backend/` holds the Phase 1 backend |
+| `src/` | Application source — `src/backend/` holds the FastAPI backend, `src/frontend/` holds the Next.js frontend |
 | `tests/` | Test suites |
 | `config/` | Configuration templates and examples |
 | `scripts/` | Development and operational scripts |
@@ -132,10 +131,35 @@ automation is a **future phase**; day-to-day site interaction remains fully
 manual today. See
 [`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md).
 
-> **Note:** the optional frontend dashboard is deferred — Node.js is not
-> installed in the development environment, so `npm`/`next` tooling is
-> unavailable. All foundation functionality is exercised via the documented
-> REST API under `/api/v1/candidates/{candidate_id}/auth`.
+## Frontend (Next.js)
+
+The Phase 1 frontend lives in `src/frontend/` and provides the interactive UI for every
+Phase 1 feature:
+
+- **Register / Login** — exchange credentials for an HttpOnly session cookie backed by
+  the backend token (`/api/auth/{register,login}` route handlers). The token never
+  reaches the browser.
+- **Profile editor** — basic info, headline, summary, preferences, and completeness.
+- **Skills / Experience / Education / Certifications** — CRUD panels against the backend.
+- **Resumes** — create containers, upload versions, list, and trigger parsing.
+- **Connections** — manage auth providers, sessions, secrets references, and challenges
+  (human-in-the-loop).
+- **Proxy** (`proxy.ts`) — forwards `/api/v1/*` to the backend, injecting
+  `Authorization: Bearer <token>` from the cookie; protected pages redirect to
+  `/login` when no session exists.
+
+To run it against a backend on `http://localhost:8000`:
+
+```bash
+cd src/frontend
+npm install
+npm run dev        # development (non-secure cookies over http)
+npm run build      # production build
+npm start          # production server (expects HTTPS in real deployments)
+```
+
+Quality gates: `npm run lint`, `npx tsc --noEmit`, `npm run build`. `API_BASE_URL`
+configures the backend origin for both the route handlers and the proxy.
 
 ## 24×7 Operation
 

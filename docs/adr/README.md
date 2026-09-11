@@ -10,7 +10,7 @@ This directory records major architecture and technology decisions for the AI Ca
 | [ADR-004](adr-004-playwright-browser.md) | Playwright for browser automation | Proposed |
 | [ADR-005](adr-005-langchain-llm-abstraction.md) | LangChain / LangGraph for LLM abstraction | Proposed |
 | [ADR-006](adr-006-oauth-oidc-authentication.md) | OAuth2 / OIDC for authentication | Proposed |
-| [ADR-007](adr-007-nextjs-frontend.md) | Next.js for the frontend | Proposed |
+| [ADR-007](adr-007-nextjs-frontend.md) | Next.js for the frontend | Accepted |
 | [ADR-008](adr-008-agent-orchestrator.md) | Agent orchestrator + event-driven workflows | Proposed |
 | [ADR-009](adr-009-docker-cloud-deployment.md) | Docker + cloud container service for deployment | Proposed |
 

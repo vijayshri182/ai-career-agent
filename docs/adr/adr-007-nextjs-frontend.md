@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -11,6 +11,8 @@ The dashboard needs server-side rendering for fast initial loads, good SEO if pu
 ## Decision
 
 Use **Next.js** (App Router) with **TypeScript** and **Tailwind CSS**.
+
+The Phase 1 frontend (`src/frontend/`) implements this: Next.js 16 (App Router, Turbopack), React 19, TypeScript, and Tailwind CSS v4. Authentication uses an HttpOnly `access_token` cookie set by `/api/auth/*` route handlers; a `proxy.ts` forwards `/api/v1/*` to the FastAPI backend and injects the bearer token from the cookie, so the token never reaches browser JavaScript.
 
 ## Alternatives Considered
 

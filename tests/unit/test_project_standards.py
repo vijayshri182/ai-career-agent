@@ -12,7 +12,7 @@ def test_no_env_file_committed() -> None:
 
 def test_no_raw_placeholder_tokens() -> None:
     """Documentation and config must not contain raw {{PLACEHOLDER}} tokens."""
-    exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__"}
+    exclude_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".next"}
     bad_files = []
     for path in PROJECT_ROOT.rglob("*"):
         if not path.is_file():

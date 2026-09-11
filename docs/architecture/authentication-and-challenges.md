@@ -145,6 +145,11 @@ Implemented in `src/backend/`:
   challenge lifecycle, workflow resume, and cross-user 404s.
 
 **Not implemented (intentional):** site adapters under `auth_adapter`, a
-production vault provider, browser automation, and the frontend dashboard.
-Node.js is not installed in the development environment, so the optional
-frontend foundation is deferred.
+production vault provider, and browser automation.
+
+**Frontend:** the Next.js app (`src/frontend/`) surfaces this foundation — the
+Connections page manages auth providers, sessions, secret references, and
+challenges through `/api/v1/candidates/{candidate_id}/auth`. Authentication
+between the browser and frontend uses an HttpOnly `access_token` cookie; the
+Next.js proxy (`proxy.ts`) injects `Authorization: Bearer <token>` when
+forwarding `/api/v1/*` to the backend, so the token never reaches the browser.

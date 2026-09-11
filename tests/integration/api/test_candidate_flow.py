@@ -206,6 +206,30 @@ async def test_resume_upload_parse_and_apply(client: AsyncClient, candidate, aut
     assert r.json()["status"] == "applied"
 
 
+async def test_resume_list_includes_active_version(client: AsyncClient, candidate, auth_headers: dict):
+    r = await client.post(f"/api/v1/candidates/{candidate.id}/resumes", json={
+        "name": "Main Resume",
+        "resume_type": "general",
+    }, headers=auth_headers)
+    assert r.status_code == 201
+    resume_id = r.json()["id"]
+
+    content, ctype = _docx_bytes("Jane Doe\njane.doe@example.com\n")
+    r = await client.post(
+        f"/api/v1/candidates/{candidate.id}/resumes/{resume_id}/upload",
+        files={"file": ("resume.docx", content, ctype)},
+        headers=auth_headers,
+    )
+    assert r.status_code == 201, r.text
+
+    r = await client.get(f"/api/v1/candidates/{candidate.id}/resumes", headers=auth_headers)
+    assert r.status_code == 200, r.text
+    resumes = r.json()
+    assert len(resumes) == 1
+    assert resumes[0]["active_version_id"] is not None
+    assert resumes[0]["active_version"]["original_filename"] == "resume.docx"
+
+
 async def test_unauthorized_cross_candidate_access(client: AsyncClient, candidate, session):
     from backend.repositories.user import UserRepository
 

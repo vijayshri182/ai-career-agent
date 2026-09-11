@@ -67,6 +67,7 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Profile completeness score reaches 100% when all sections are filled.
 * **Dependencies:** Phase 0.
 * **Complexity:** M
+* **Status:** Backend and frontend implemented. The backend lives in `src/backend/`; the interactive UI lives in `src/frontend/` (Next.js). Frontend auth uses an HttpOnly `access_token` cookie via `/api/auth/*` route handlers; `proxy.ts` forwards `/api/v1/*` to the backend and injects the bearer token from the cookie.
 
 ---
 
@@ -91,7 +92,7 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
 * **Acceptance criteria:**
   * Reporting a challenge opens at most one in-flight challenge per provider/type (partial unique index).
   * Completing a challenge resumes the paused workflow exactly once within the attempt/expiry budget.
-  * Full suite: 99 tests passing; `ruff check` and `mypy` clean.
+  * Full suite: 100 tests passing; `ruff check` and `mypy` clean.
 * **Dependencies:** Phase 1.
 * **Complexity:** M
 * **Status:** Implemented. See [`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md). Application automation is a **future phase**; this foundation only records state and coordinates pauses/resumes around human acts.
