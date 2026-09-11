@@ -9,10 +9,9 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `73b5506` (`feat: add authentication and challenge management foundation`) |
-| HEAD == origin/main | **Yes** (identical after `git fetch origin main`) |
-| HEAD == origin/master | N/A — remote default branch is `main`; no `origin/master` ref exists |
-| Upstream | `main` tracks `origin/main`, even (no ahead/behind) |
+| HEAD SHA | `fa0acd1` (`feat: add phase 1 frontend`) |
+| HEAD == origin/main | **Yes** |
+| Upstream | `main` tracks `origin/main`, even |
 
 ---
 
@@ -25,99 +24,94 @@
 | WS-2 | Phase 1 — HTTP-layer ownership dependency (`get_owned_candidate`) + parse/apply-parsed workflow | Complete | `8a67306` `docs: update project progress` (doc), `fe8aa29` incl. in Phase 1 completion |
 | WS-3 | Phase 1 — hardening: service-layer ownership, safe re-apply, explicit confirmation | Complete, 49 tests | `fe8aa29` `feat: complete phase 1 candidate profile foundation` |
 | WS-4 | Phase 1 — authentication & challenge management foundation (provider-neutral auth state, challenges, workflows, secret references) | Complete | `73b5506` `feat: add authentication and challenge management foundation` |
-| WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; smoke-tested | **NOT committed** (current working tree; pending commit/push) |
+| WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
+| WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; pending commit | **NOT committed** (current working tree) |
 
 ---
 
-## Current Workstream: WS-5 — Phase 1 Frontend (Next.js) + Integration Fixes
+## Current Workstream: WS-6 — Phase 2 Job Discovery foundation (backend)
 
-**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 1 (Candidate Profile, frontend).
-**Workstream:** Complete interactive frontend for all Phase 1 features, plus runtime integration fixes
-found by smoke-testing the running stack.
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 2 (Job Discovery, backend foundation).
+**Workstream:** Models, repositories, services, source adapters, API routers, scheduler wiring,
+Alembic migration, and tests for discovering/normalizing/deduplicating job postings.
 
 ### What Was Implemented
 
-1. **Frontend scaffold** in `src/frontend/` — Next.js 16 (App Router, Turbopack), React 19,
-   TypeScript, Tailwind CSS v4. `npm run lint`, `npx tsc --noEmit`, `npm run build` all clean.
-2. **Auth with HttpOnly cookies** — `/api/auth/{register,login}` route handlers exchange credentials
-   for the backend token and set it as an HttpOnly `access_token` cookie (7 days, SameSite=lax,
-   `Secure` in production). `GET|POST /api/auth/me` reads/logs out the session. Token never reaches the
-   browser. `logout()` fixed to `POST /api/auth/me`.
-3. **`proxy.ts`** — Next.js 16 replaced the deprecated `middleware` convention with `proxy`. It forwards
-   `/api/v1/*` to the backend, injects `Authorization: Bearer <token>` from the cookie, guards protected
-   pages (redirect to `/login`), and redirects authenticated users away from `/login`/`/register`.
-   Security fix vs earlier middleware: response headers no longer echo back request headers
-   (prevented `Authorization` leakage to the browser).
-4. **Pages** — landing, login, register, dashboard (profile-completeness + quick links), profile +
-   sub-pages (skills, experience, education, certifications, preferences), resumes, connections. Layout
-   kept bare; pages use the `AppShell` wrapper.
-5. **Components / hooks** — `ui.tsx`, `nav.tsx`, `app-shell.tsx`, `auth-form.tsx`, `profile-editor.tsx`,
-   `skills/experience/education/certifications-editor.tsx`, `preferences-form.tsx`, `resumes-panel.tsx`,
-   `connections-panel.tsx`; typed `lib/{api,config,auth-server,types,constants,hooks}.ts`.
-6. **Backend integration fixes** (from live runtime smoke test):
-   - `ResumeRepository.list_active` now `selectinload(Resume.versions)` — previously `GET
-     /candidates/{id}/resumes` raised `MissingGreenlet` on async lazy-load of `active_version`
-     (resume listing 500). Fixed + regression test added.
-   - `tests/unit/test_project_standards.py` scans for `{{ }}` placeholder tokens; added `.next/` to the
-     exclude set so frontend build artifacts are not flagged.
+1. **Models + migration** — `Company`, `JobSource`, `Job`, `RawJobExtraction`, `AgentTask`. New tables
+   created by hand-written Alembic migration `5e5f4c256726` (`down_revision = 005485fe2c1f`) with
+   indexes/unique constraints/FKs. Enum columns store member **NAMEs** (UPPERCASE) — verified with
+   SQLite. Job uniqueness is per-candidate (`uq_jobs_candidate_url`, `uq_jobs_candidate_company_external`).
+   Company partial unique index uses `'VERIFIED'`. `RawJobExtraction.job` uses string-annotation `"Job"`
+   (the MySQL-style `"Job | None"` annotation broke SQLAlchemy mapper resolution).
+2. **Source adapters** — `services/adapters/base.py` (`AdapterFetchResult`, `JobSourceAdapter`
+   protocol); `generic_http.py` (`GenericHttpAdapter`, `mode:"json"` with `list_path` + dotted
+   `selectors`, `mode:"html"` anchor extraction with job-hint filtering).
+3. **Services** — `robots.py` (robots.txt policy parser; crawls UA group, allow/disallow,
+   crawl-delay; explicit-`*` precedence), `url_validation.py` (scheme/host validation + SSRF guard vs
+   private IPs), `normalization.py` (`JobNormalizer`, content hashing, `domain_of`, `parse_utc`),
+   `dedup.py` (`JobDedupService.classify` — precedence URL → company+external_id → content hash),
+   `freshness.py` (`JobFreshnessService.mark_expired`), `job_source.py` (source CRUD + audit + base_url
+   validation), `job.py` (job list/get), `discovery.py` (`DiscoveryService` orchestrator — single
+   per-run httpx client, per-source robots cache + crawl-rate limiter, get-or-create company, raw
+   extraction capture, agent-task lifecycle, freshness pass, per-source outcome counts),
+   `scheduler.py` (`AgentScheduler` for periodic discovery runs, wired in `app/main.py` lifespan when
+   `settings.discovery_enabled`).
+4. **API routers** — `api/v1/sources.py`, `api/v1/jobs.py`, `api/v1/discoveries.py`, all candidate-
+   scoped under `/api/v1/candidates/{candidate_id}/...`. `api/deps.py` gained factory-based DI
+   (`get_job_source_service`, `get_job_service`, `get_discovery_service`, `make_discovery_service`).
+5. **Tests** — `tests/unit/test_url_validation.py`, `tests/unit/test_robots.py`,
+   `tests/unit/test_normalization.py`, `tests/integration/api/test_job_discovery.py` (sources CRUD,
+   unsafe-URL rejection, discovery run creates jobs, idempotent re-run, discovery-run listing).
 
-### Files Changed (WS-5, uncommitted)
+### Files Changed (WS-6, uncommitted)
 
-**Untracked (new) `src/frontend/`:** full Next.js app (all pages/components/lib/`proxy.ts`), plus
-`package.json`, `package-lock.json`, `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`,
-`eslint.config.mjs`, `public/`, `.gitignore`, `README.md`, `AGENTS.md`, `CLAUDE.md`.
+**New:** `src/backend/models/{company,job_source,job,raw_job_extraction,agent_task}.py`,
+`src/backend/schemas/{company,job_source,job,agent_task,discovery}.py`,
+`src/backend/repositories/{company,job_source,job,raw_job_extraction,agent_task}.py`,
+`src/backend/services/{robots,url_validation,normalization,dedup,freshness,job_source,job,discovery,scheduler}.py`,
+`src/backend/services/adapters/{__init__,base,generic_http}.py`,
+`src/backend/api/v1/{sources,jobs,discoveries}.py`,
+`migrations/versions/5e5f4c256726_add_job_discovery_foundation.py`,
+`tests/unit/test_{url_validation,robots,normalization}.py`,
+`tests/integration/api/test_job_discovery.py`.
 
-**Modified:** `src/backend/repositories/resume.py` (eager-load `versions`),
-`tests/integration/api/test_candidate_flow.py` (new regression test),
-`tests/unit/test_project_standards.py` (exclude `.next`), `README.md`, `PROGRESS.md`.
-
-**Deleted:** `src/frontend/.gitkeep` (replaced by the real scaffold).
+**Modified:** `src/backend/app/main.py` (routers + scheduler lifespan), `src/backend/api/deps.py`
+(discovery DI), `src/backend/repositories/base.py` (added `flush`), `src/backend/repositories/job.py`
+(`find_identical`, `_first_where`), `src/backend/repositories/agent_task.py` (`list_for_candidate`),
+`README.md`, `ROADMAP.md`, `PROGRESS.md`.
 
 ### Tests Executed & Exact Results
 
 | Gate | Command | Result |
 |------|---------|--------|
-| Backend tests | `.venv\Scripts\python.exe -m pytest` | **100 passed** (was 49; +auth/challenge tests in WS-4, +1 regression here) |
-| Backend lint | `.venv\Scripts\python.exe -m ruff check .` | All checks passed |
-| Backend types | `.venv\Scripts\python.exe -m mypy src` | Success: no issues in 76 files |
-| Frontend types | `npx tsc --noEmit` (in `src/frontend`) | Clean |
-| Frontend lint | `npm run lint` | Clean |
-| Frontend build | `npm run build` | Succeeded, 18 routes + `ƒ Proxy (Middleware)`; no middleware deprecation warning |
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **134 passed** (was 100 in WS-5) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 106 files |
 
-### Runtime Smoke Test (live, backend uvicorn + `next start`)
-
-Verified end-to-end through the Next.js proxy against the real backend (SQLite scratch DB):
-register → cookie issued (HttpOnly) → `/api/auth/me` with cookie → create candidate (POST JSON body
-preserved through proxy) → `/candidates/me` → add skill → profile completeness → resumes upload
-(multipart body preserved) → list resumes → logout → `/api/auth/me` returns 401 → unauthenticated
-`/dashboard` redirects to `/login`. **All checks passed.**
-
-> Note: `next start` runs with `NODE_ENV=production` so cookies carry the `Secure` attribute; browsers
-> send Secure cookies to `http://localhost` (and it is required over real HTTPS), while plain-HTTP API
-> test clients (httpx/curl) refuse them — the smoke script forwards the cookie header manually. In
-> `npm run dev` cookies are not `Secure` and plain-HTTP local testing works directly.
+Notable bugs fixed during WS-6: `crawl_config` validator rejected a source lacking
+`requests_per_minute` (only validate when present); robots parser dropped `crawl-delay` lines and
+groups lacking allow/disallow; discovery tests created sources disabled (must enable before a run).
 
 ### Commit Status / Next Step
 
-- WS-5 feature + docs: **NOT committed** — commit (e.g. `feat: add phase 1 frontend`), push `origin/main`,
-  verify `HEAD == origin/main` and clean tree.
+- WS-6 feature + docs: **NOT committed** — commit (e.g. `feat: implement job discovery foundation`),
+  push `origin/main`, verify `HEAD == origin/main` and clean tree.
 
 ### Known Risks / Issues
 
-1. The proxy/rewrite path is validated for JSON and multipart bodies against the live backend; other
-   media types are assumed safe (rewrite preserves the raw request).
-2. `API_BASE_URL` must be set when building/deploying the frontend to point at the backend origin
-   (route handlers and `proxy.ts` both read it); default is `http://localhost:8000`.
-3. Phase 2–13 and any runtime deployment (HTTPS, Docker, Postgres) remain out of scope.
+1. Phase 3+ (apply flow, enrichments, deployment, Postgres) remains out of scope.
+2. The scheduler runs only when `settings.discovery_enabled` is true; background discovery against real
+   external sources is not exercised by CI (tests use a stub adapter + MockTransport).
+3. No real-world robots.txt corpus is loaded; parser is unit-tested against representative cases.
 
 ---
 
 ## Next Workstream
 
-1. **Commit + push WS-5** (current working tree) and verify clean tree / `HEAD == origin/main`.
-2. **Phase 2 — Job Discovery** — not started, not approved.
+1. **Commit + push WS-6** (current working tree) and verify clean tree / `HEAD == origin/main`.
+2. **Phase 3 — Applying** — not started, not approved.
 
 ## Next Workstream Status
 
-- Approved: **YES for commit/push of WS-5** (Phase 1 completion checkpoint per plan).
-- Started: **NO** (Phase 2 not started until WS-5 is committed and verified).
+- Approved: **YES for commit/push of WS-6** (Phase 2 completion checkpoint per plan).
+- Started: **NO** (Phase 3 not started until WS-6 is committed and verified).

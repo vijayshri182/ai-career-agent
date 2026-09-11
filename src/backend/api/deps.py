@@ -1,8 +1,9 @@
 """FastAPI dependencies."""
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from uuid import UUID
 
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,7 @@ from backend.core.security_service import get_security_service
 from backend.db.engine import make_engine, make_session_factory
 from backend.models.candidate import Candidate
 from backend.models.user import User
+from backend.repositories.agent_task import AgentTaskRepository
 from backend.repositories.audit import AuditRepository
 from backend.repositories.authentication_provider import (
     AuthProviderRepository,
@@ -22,8 +24,12 @@ from backend.repositories.browser_session import BrowserSessionRepository
 from backend.repositories.candidate import CandidateRepository
 from backend.repositories.certification import CertificationRepository
 from backend.repositories.challenge import ChallengeRepository
+from backend.repositories.company import CompanyRepository
 from backend.repositories.education import EducationRepository
 from backend.repositories.experience import ExperienceRepository
+from backend.repositories.job import JobRepository
+from backend.repositories.job_source import JobSourceRepository
+from backend.repositories.raw_job_extraction import RawJobExtractionRepository
 from backend.repositories.resume import (
     ParsedResumeRepository,
     ResumeRepository,
@@ -33,6 +39,8 @@ from backend.repositories.secret_reference import SecretReferenceRepository
 from backend.repositories.skill import SkillRepository
 from backend.repositories.user import UserRepository
 from backend.repositories.workflow_run import WorkflowRunRepository
+from backend.services.adapters.base import JobSourceAdapter
+from backend.services.adapters.generic_http import GenericHttpAdapter
 from backend.services.auth import AuthService
 from backend.services.authentication import AuthenticationService
 from backend.services.authentication_provider import AuthProviderService
@@ -40,9 +48,13 @@ from backend.services.browser_session import BrowserSessionManager
 from backend.services.candidate import CandidateService
 from backend.services.certification import CertificationService
 from backend.services.challenge import ChallengeService
+from backend.services.discovery import DiscoveryService
 from backend.services.education import EducationService
 from backend.services.experience import ExperienceService
 from backend.services.human_in_loop import HumanInTheLoopService
+from backend.services.job import JobService
+from backend.services.job_source import JobSourceService
+from backend.services.normalization import JobNormalizer
 from backend.services.profile import ProfileService
 from backend.services.resume import ResumeService
 from backend.services.secrets import LocalSecretsProvider, SecretReferenceService
@@ -235,6 +247,66 @@ async def get_authentication_service(
         workflows=workflow_service,
         browser_sessions=browser_manager,
         secrets=secret_service,
+    )
+
+
+def _make_client(settings: Settings) -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        timeout=settings.crawl_timeout_seconds,
+        follow_redirects=True,
+        headers={"User-Agent": settings.crawl_user_agent},
+    )
+
+
+def _make_adapter_factory(settings: Settings) -> Callable[[httpx.AsyncClient], JobSourceAdapter]:
+    normalizer = JobNormalizer()
+
+    def factory(client: httpx.AsyncClient) -> JobSourceAdapter:
+        return GenericHttpAdapter(
+            client,
+            normalizer,
+            user_agent=settings.crawl_user_agent,
+            timeout=settings.crawl_timeout_seconds,
+        )
+
+    return factory
+
+
+async def get_job_source_service(session: AsyncSession = Depends(get_session)) -> JobSourceService:
+    return JobSourceService(
+        JobSourceRepository(session),
+        AuditRepository(session),
+        CandidateRepository(session),
+    )
+
+
+async def get_job_service(session: AsyncSession = Depends(get_session)) -> JobService:
+    return JobService(
+        JobRepository(session),
+        CandidateRepository(session),
+    )
+
+
+async def get_discovery_service(session: AsyncSession = Depends(get_session)) -> DiscoveryService:
+    return make_discovery_service(session)
+
+
+def make_discovery_service(
+    session: AsyncSession, settings: Settings | None = None
+) -> DiscoveryService:
+    settings = settings or get_settings()
+    return DiscoveryService(
+        candidate_repo=CandidateRepository(session),
+        source_repo=JobSourceRepository(session),
+        company_repo=CompanyRepository(session),
+        job_repo=JobRepository(session),
+        extraction_repo=RawJobExtractionRepository(session),
+        task_repo=AgentTaskRepository(session),
+        audit_repo=AuditRepository(session),
+        adapter_factory=_make_adapter_factory(settings),
+        client_factory=lambda: _make_client(settings),
+        normalizer=JobNormalizer(),
+        settings=settings,
     )
 
 

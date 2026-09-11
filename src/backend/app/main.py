@@ -2,21 +2,32 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.api.deps import make_discovery_service
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.authentication import router as authentication_router
 from backend.api.v1.candidate import router as candidate_router
 from backend.api.v1.certifications import router as certifications_router
+from backend.api.v1.discoveries import router as discoveries_router
 from backend.api.v1.education import router as education_router
 from backend.api.v1.experience import router as experience_router
+from backend.api.v1.jobs import router as jobs_router
 from backend.api.v1.resumes import router as resumes_router
 from backend.api.v1.skills import router as skills_router
+from backend.api.v1.sources import router as sources_router
 from backend.core.config import get_settings
 from backend.core.exceptions import ForbiddenError, NotFoundError, ValidationError
+from backend.db.engine import make_engine, make_session_factory
+from backend.models.candidate import Candidate
+from backend.models.job_source import JobSource
+from backend.repositories.candidate import CandidateRepository
+from backend.repositories.job_source import JobSourceRepository
+from backend.services.scheduler import AgentScheduler
 
 
 @asynccontextmanager
@@ -25,7 +36,44 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     # Ensure local upload directory exists for development storage.
     if settings.storage_provider == "local":
         settings.storage_local_path.mkdir(parents=True, exist_ok=True)
-    yield
+
+    scheduler: AgentScheduler | None = None
+    if settings.discovery_enabled:
+        engine = make_engine(settings)
+        factory = make_session_factory(engine)
+
+        async def _run_discovery(candidate_id: UUID, user_id: UUID) -> None:
+            async with factory() as session:
+                try:
+                    await make_discovery_service(session, settings).run_discovery(
+                        candidate_id, user_id
+                    )
+                    await session.commit()
+                except Exception:  # noqa: BLE001
+                    await session.rollback()
+
+        async def _get_active_candidates() -> list[Candidate]:
+            async with factory() as session:
+                return await CandidateRepository(session).list_active()
+
+        async def _get_enabled_sources(candidate_id: UUID) -> list[JobSource]:
+            async with factory() as session:
+                sources = await JobSourceRepository(session).list_for_candidate(candidate_id)
+                return [s for s in sources if s.is_enabled]
+
+        scheduler = AgentScheduler(
+            interval_seconds=settings.discovery_interval_seconds,
+            run_fn=_run_discovery,
+            get_candidates=_get_active_candidates,
+            get_sources=_get_enabled_sources,
+        )
+        scheduler.start()
+        app.state.scheduler = scheduler
+    try:
+        yield
+    finally:
+        if scheduler is not None:
+            scheduler.stop()
 
 
 app = FastAPI(
@@ -78,3 +126,6 @@ app.include_router(experience_router, prefix="/api/v1")
 app.include_router(education_router, prefix="/api/v1")
 app.include_router(certifications_router, prefix="/api/v1")
 app.include_router(resumes_router, prefix="/api/v1")
+app.include_router(sources_router, prefix="/api/v1")
+app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(discoveries_router, prefix="/api/v1")

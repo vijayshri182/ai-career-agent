@@ -130,6 +130,7 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Expired postings are marked `EXPIRED`.
 * **Dependencies:** Phase 1.
 * **Complexity:** L
+* **Status:** Implemented. 134 tests passing; `ruff check` and `mypy` clean.
 
 ---
 

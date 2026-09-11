@@ -2,10 +2,11 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phase 1 — Candidate Profile backend foundation, Authentication & Challenge Management foundation, and
-> the Phase 1 frontend (Next.js) are complete. All profile, resume, authentication, and challenge-management
-> functionality is exercised through the web UI against the REST API.
-> No application automation, scraping, or production integrations are implemented yet.
+> **Status:** Phase 1 — Candidate Profile backend foundation, Authentication & Challenge Management
+> foundation, and the Phase 1 frontend (Next.js) are complete. **Phase 2 — Job Discovery** backend
+> foundation (source adapters, robots.txt compliance, normalization, deduplication, freshness,
+> scheduler, API routers, migration) is complete and exercised through integration tests.
+> No application automation, submission, or production integrations are implemented yet.
 
 ## Vision
 

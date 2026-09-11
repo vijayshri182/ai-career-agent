@@ -15,6 +15,9 @@ if TYPE_CHECKING:
     from backend.models.authentication import AuthProvider
     from backend.models.browser_session import BrowserSession
     from backend.models.challenge import Challenge
+    from backend.models.job import Job
+    from backend.models.job_source import JobSource
+    from backend.models.raw_job_extraction import RawJobExtraction
     from backend.models.resume import Resume
     from backend.models.secret_reference import SecretReference
     from backend.models.user import User
@@ -103,6 +106,9 @@ class Candidate(IdModel, table=True):
     secret_references: list["SecretReference"] = Relationship(back_populates="candidate")
     browser_sessions: list["BrowserSession"] = Relationship(back_populates="candidate")
     workflow_runs: list["WorkflowRun"] = Relationship(back_populates="candidate")
+    job_sources: list["JobSource"] = Relationship(back_populates="candidate")
+    jobs: list["Job"] = Relationship(back_populates="candidate")
+    job_extractions: list["RawJobExtraction"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

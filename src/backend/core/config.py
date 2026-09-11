@@ -55,6 +55,21 @@ class Settings(BaseSettings):
         alias="PROFILE_COMPLETENESS_WEIGHTS",
     )
 
+    discovery_enabled: bool = Field(default=False, alias="DISCOVERY_ENABLED")
+    discovery_interval_seconds: int = Field(
+        default=21600, alias="DISCOVERY_INTERVAL_SECONDS"
+    )
+    crawl_user_agent: str = Field(
+        default="AI-Career-Agent/0.1 (+privacy-human-in-the-loop)",
+        alias="CRAWL_USER_AGENT",
+    )
+    crawl_timeout_seconds: float = Field(default=20.0, alias="CRAWL_TIMEOUT_SECONDS")
+    crawl_backoff_seconds: float = Field(default=2.0, alias="CRAWL_BACKOFF_SECONDS")
+    crawl_max_retries: int = Field(default=2, alias="CRAWL_MAX_RETRIES")
+    discovery_default_requests_per_minute: int = Field(
+        default=10, alias="DISCOVERY_DEFAULT_REQUESTS_PER_MINUTE"
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

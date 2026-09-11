@@ -38,6 +38,11 @@ class CandidateRepository(BaseRepository[Candidate]):
             raise NotFoundError("Candidate not found")
         return candidate
 
+    async def list_active(self) -> list[Candidate]:
+        stmt = select(Candidate).where(Candidate.status != ProfileStatus.DELETED)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     def _prepare_pii(self, data: dict[str, object]) -> dict[str, object]:
         """Map plain PII fields to encrypted storage columns + email hash."""
         if "email" in data and data["email"] is not None:
