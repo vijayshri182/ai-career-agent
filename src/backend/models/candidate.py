@@ -12,8 +12,13 @@ from backend.db.base import IdModel
 from backend.db.encrypted_types import EncryptedString
 
 if TYPE_CHECKING:
+    from backend.models.authentication import AuthProvider
+    from backend.models.browser_session import BrowserSession
+    from backend.models.challenge import Challenge
     from backend.models.resume import Resume
+    from backend.models.secret_reference import SecretReference
     from backend.models.user import User
+    from backend.models.workflow_run import WorkflowRun
 
 
 class ProfileStatus(str, Enum):
@@ -93,6 +98,11 @@ class Candidate(IdModel, table=True):
     educations: list["Education"] = Relationship(back_populates="candidate")
     certifications: list["Certification"] = Relationship(back_populates="candidate")
     resumes: list["Resume"] = Relationship(back_populates="candidate")
+    auth_providers: list["AuthProvider"] = Relationship(back_populates="candidate")
+    challenges: list["Challenge"] = Relationship(back_populates="candidate")
+    secret_references: list["SecretReference"] = Relationship(back_populates="candidate")
+    browser_sessions: list["BrowserSession"] = Relationship(back_populates="candidate")
+    workflow_runs: list["WorkflowRun"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api.v1.auth import router as auth_router
+from backend.api.v1.authentication import router as authentication_router
 from backend.api.v1.candidate import router as candidate_router
 from backend.api.v1.certifications import router as certifications_router
 from backend.api.v1.education import router as education_router
@@ -70,6 +71,7 @@ async def ready() -> dict[str, str]:
 
 
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(authentication_router, prefix="/api/v1")
 app.include_router(candidate_router, prefix="/api/v1")
 app.include_router(skills_router, prefix="/api/v1")
 app.include_router(experience_router, prefix="/api/v1")

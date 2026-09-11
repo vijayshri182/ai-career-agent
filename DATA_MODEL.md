@@ -380,6 +380,102 @@ erDiagram
 
 **Indexes:** `event_type`, `entity_type`, `entity_id`, `recorded_at`.
 
+### 7.5 Authentication & Challenge Management
+
+These entities record *where* the agent may need to authenticate and *when a
+site requires human verification*. They contain **no secret values** — only
+opaque references resolved by an external secrets provider.
+
+#### AuthProvider
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| candidate_id | UUID | FK → candidate. |
+| name | VARCHAR(128) | Display name; unique per candidate. |
+| provider_type | ENUM | ATS, CAREER_SITE, JOB_BOARD, NETWORKING, EMAIL, OTHER. |
+| base_url | VARCHAR(512) | Optional. |
+| authentication_method | ENUM | NONE, SESSION, OAUTH, OIDC, PASSWORD, API_KEY, UNKNOWN. |
+| is_enabled | BOOLEAN | |
+| notes / metadata_json | TEXT / JSONB | |
+
+**Indexes:** `candidate_id`, unique `(candidate_id, name)`.
+
+#### AuthProviderState
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| provider_id | UUID | FK → auth_provider; unique. |
+| status | ENUM | NOT_REQUIRED, NOT_CONFIGURED, AUTHENTICATED, SESSION_EXPIRED, AUTHENTICATION_REQUIRED, MFA_REQUIRED, CAPTCHA_REQUIRED, ACCESS_BLOCKED, RATE_LIMITED, HUMAN_ACTION_REQUIRED, ERROR. |
+| session_reference | VARCHAR(512) | Opaque pointer; never a value. |
+| checked_at / authenticated_at | TIMESTAMP | |
+| state_metadata | JSONB | |
+
+**Indexes:** `provider_id` (unique), `status`.
+
+#### Challenge
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| candidate_id / provider_id | UUID | FKs. |
+| workflow_id | VARCHAR(36) | Soft ref to workflow_runs.id. |
+| challenge_type | ENUM | CAPTCHA, MFA, OTP, LOGIN_REQUIRED, SESSION_EXPIRED, BOT_PROTECTION, ACCESS_DENIED, RATE_LIMIT, UNKNOWN_HUMAN_VERIFICATION. |
+| status | ENUM | OPEN, ACKNOWLEDGED, HUMAN_ACTION_REQUIRED, RESOLVED, CANCELLED, TIMED_OUT, FAILED. |
+| severity / human_required | ENUM / BOOLEAN | |
+| description / context_metadata | TEXT / JSONB | |
+| detected_at / ack / expires / resolved / cancelled / timed_out | TIMESTAMP | |
+| resolution_method | ENUM | HUMAN, SUPERSEDED, SYSTEM, UNRESOLVED. |
+| retry_count / max_retries | INT | |
+
+**Indexes:** `candidate_id`, `provider_id`, `status`, `workflow_id`; **partial
+unique** `(provider_id, challenge_type)` where status in
+(`open`, `acknowledged`, `human_action_required`) — one in-flight challenge per
+provider/type.
+
+#### WorkflowRun
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| candidate_id / provider_id | UUID | FKs. |
+| workflow_type | VARCHAR(128) | e.g., `authentication_and_challenge`. |
+| status | ENUM | RUNNING, PAUSED_HUMAN_ACTION, RESUMED, COMPLETED, CANCELLED, TIMED_OUT, FAILED. |
+| resume_token | UUID | Opaque; required to resume. |
+| attempt_count / max_attempts | INT | Resume budget from a paused state. |
+| context_metadata | JSONB | |
+| started_at / paused_at / resumed_at / finished_at / expires_at | TIMESTAMP | |
+
+**Indexes:** `candidate_id`, `provider_id`, `status`, `resume_token` (unique).
+
+#### BrowserSession
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| candidate_id / provider_id | UUID | FKs. |
+| status | ENUM | ACTIVE, EXPIRED, CLOSED, SUSPENDED, UNKNOWN. |
+| storage_reference | VARCHAR(512) | Opaque pointer to encrypted browser state; never raw cookies. |
+| external_session_id | VARCHAR(512) | Opaque external identifier. |
+| last_seen_at / closed_at | TIMESTAMP | |
+
+**Indexes:** `candidate_id`, `provider_id`, `status`.
+
+#### SecretReference
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | PK. |
+| candidate_id / provider_id | UUID | FKs. |
+| secret_type | ENUM | PASSWORD, API_KEY, OAUTH_TOKEN, REFRESH_TOKEN, SESSION_COOKIE, MFA_SHARED_SECRET, UNKNOWN. |
+| external_reference | VARCHAR(512) | Pointer into the secrets store (`vault://...`); never the secret. |
+| status | ENUM | ACTIVE, ROTATED, REVOKED, MISSING. |
+| rotated_at / last_used_at | TIMESTAMP | |
+| notes / is_local_dev_placeholder | VARCHAR / BOOLEAN | |
+
+**Indexes:** `candidate_id`, `provider_id`.
+
 ## 8. Lifecycle State Transitions
 
 ### Job Lifecycle
@@ -414,6 +510,21 @@ stateDiagram-v2
     INTERVIEW --> REJECTED
     APPLIED --> REJECTED
     APPROVAL_REQUIRED --> WITHDRAWN
+```
+
+### Workflow Run Lifecycle (authentication & challenges)
+
+```mermaid
+stateDiagram-v2
+    [*] --> RUNNING
+    RUNNING --> PAUSED_HUMAN_ACTION
+    PAUSED_HUMAN_ACTION --> RUNNING : human resumed (matching token, within budget)
+    PAUSED_HUMAN_ACTION --> COMPLETED
+    PAUSED_HUMAN_ACTION --> CANCELLED
+    PAUSED_HUMAN_ACTION --> TIMED_OUT
+    PAUSED_HUMAN_ACTION --> FAILED
+    RUNNING --> COMPLETED
+    RUNNING --> FAILED
 ```
 
 ## 9. Indexes Summary

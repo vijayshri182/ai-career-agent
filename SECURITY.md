@@ -55,6 +55,22 @@ flowchart TB
 * Keys are rotated on a schedule and after any suspected exposure.
 * Application reads secrets at startup; no plaintext passwords in logs.
 
+### 3.1 Authentication & Challenge Foundation — References Only
+
+The Authentication & Challenge Management foundation
+(`auth_providers`, `auth_provider_states`, `challenges`, `workflow_runs`,
+`browser_sessions`, `secret_references`) stores **no secret values**:
+
+* `SecretReference.external_reference`, `AuthProviderState.session_reference`,
+  and `BrowserSession.storage_reference` are opaque identifiers resolved by an
+  injected `SecretsProvider` (vault). The local dev provider always reports
+  "not available", so nothing sensitive can leak from a development database.
+* No API route or schema accepts, returns, or logs passwords, OTPs, cookies,
+  tokens, or session payloads.
+* Challenge resolution is a human act; the system never attempts CAPTCHA/MFA
+  bypass or automatic resolution and resumes a paused workflow only after the
+  completion is recorded.
+
 ## 4. Authentication & Session Management
 
 * Users authenticate via OAuth2 / OpenID Connect (e.g., Auth0, Google, GitHub).

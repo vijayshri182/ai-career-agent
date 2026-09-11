@@ -2,8 +2,10 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phase 1 — Candidate Profile backend foundation in progress.  
-> Project foundation and architecture (Phase 0) plus the Phase 1 backend: schema, migration, REST API, and tests.  
+> **Status:** Phase 1 — Candidate Profile backend foundation complete; Authentication & Challenge Management foundation complete.
+> Project foundation and architecture (Phase 0) plus the Phase 1 backend (schema, migration, REST API, tests) and the
+> Authentication & Challenge Management foundation (provider-neutral auth state, human-verification challenges,
+> human-in-the-loop workflows, secret references).
 > No application automation, scraping, or production integrations are implemented yet.
 
 ## Vision
@@ -41,6 +43,7 @@ The agent operates 24×7 in the cloud, but the user remains in control. Sensitiv
 | `docs/agents/` | Agent-specific design notes |
 | `docs/workflows/` | Step-by-step process flows |
 | `docs/security/` | Threat model and compliance notes |
+| `docs/architecture/authentication-and-challenges.md` | Auth state machine, challenge workflow, secrets-references design |
 | `src/` | Application source — `src/backend/` holds the Phase 1 backend |
 | `tests/` | Test suites |
 | `config/` | Configuration templates and examples |
@@ -108,6 +111,31 @@ The system is being built for **Vijay Shrivastava**. The candidate profile will 
 * **Deployment:** Docker, cloud-ready (initial target: container platform)
 
 See [`docs/adr/`](docs/adr/) for the full rationale and alternatives considered.
+
+## Authentication & Challenge Management (foundation)
+
+A provider/site-neutral backend foundation that records:
+
+* **Auth providers** — which sites the candidate may need to authenticate to
+  (`AuthProvider`), their configured method, and current auth state
+  (`AuthProviderState`).
+* **Challenges** — when a site asks for human verification (CAPTCHA, MFA/OTP,
+  login, bot protection, rate limits), tracked as durable `Challenge` records.
+* **Human-in-the-loop workflows** — a challenge pauses the linked `WorkflowRun`;
+  it is resumed exactly once after the challenge is closed.
+* **References, not secrets** — secrets, sessions, and browser state are stored
+  only as opaque references resolved by an injected external secrets provider.
+
+Hard rules: **no** CAPTCHA/MFA/anti-bot bypass, **no** automatic resolution,
+**no** secret values stored in the database, logs, tests, or API. Application
+automation is a **future phase**; day-to-day site interaction remains fully
+manual today. See
+[`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md).
+
+> **Note:** the optional frontend dashboard is deferred — Node.js is not
+> installed in the development environment, so `npm`/`next` tooling is
+> unavailable. All foundation functionality is exercised via the documented
+> REST API under `/api/v1/candidates/{candidate_id}/auth`.
 
 ## 24×7 Operation
 

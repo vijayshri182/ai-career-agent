@@ -36,6 +36,7 @@ No personal facts are hard-coded. The profile is loaded through configuration/da
 11. **Feedback/Learning Engine** — analyze outcomes and recommend improvements.
 12. **Notification System** — timely alerts for high-match jobs and required actions.
 13. **Dashboard** — visibility into activity, pipeline, and audit trail.
+14. **Authentication & Challenge Management (foundation)** — records where the agent may need to authenticate and when a site requires human verification; human-in-the-loop challenge resolution. No automation and no secret storage. See [`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md).
 
 ## 5. Product Model
 
@@ -130,3 +131,4 @@ Concrete MVP capabilities:
 * [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md) — engineering standards.
 * [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution process.
 * `docs/adr/` — architecture decision records.
+* `docs/architecture/authentication-and-challenges.md` — Authentication & Challenge Management foundation design.

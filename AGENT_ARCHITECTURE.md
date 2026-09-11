@@ -4,6 +4,14 @@
 
 The system does not assume that a multi-agent architecture is always required. It uses **specialized agents only where they provide clear value**: separation of concerns, independent failure domains, different scaling needs, or different tool access patterns. Simple CRUD operations (e.g., profile editing) are implemented as traditional services, not agents.
 
+> **Authentication & Challenge Management** is implemented as a set of
+> candidate-scoped **services/workflows** (not an agent): `auth providers, states,
+> challenges, workflow runs, browser sessions, secret references`. It records
+> where authentication is needed and when a site asks for human verification.
+> It performs **no** automation and **never** stores or resolves secrets —
+> challenges are closed only after an explicit human act. See
+> [`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md).
+
 ## 2. When to Use an Agent vs. a Service
 
 | Use an Agent | Use a Service/Workflow |

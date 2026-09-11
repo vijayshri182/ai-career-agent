@@ -54,6 +54,7 @@ flowchart TB
 | API Gateway | Authentication, rate limiting, request routing, input validation. |
 | Agent Orchestrator | Schedules tasks, dispatches agents, manages state, handles retries. |
 | Specialized Agents | Perform domain-specific work (discovery, matching, preparation). |
+| Authentication & Challenges | Provider-neutral auth state, human-verification challenges, human-in-the-loop workflows, secrets-references. |
 | Tool/Integration Layer | Pluggable adapters for job sources, ATS, browser, email, networking. |
 | Data Layer | Relational database, object storage, vector store, audit logs. |
 | LLM Layer | Structured generation, summarization, matching, personalization. |
@@ -74,6 +75,23 @@ flowchart TB
 * Handles retries with exponential backoff.
 * Routes human approvals back into workflows.
 * Guarantees idempotency via deterministic task IDs.
+
+### 3.3 Authentication & Challenge Management (Foundation)
+
+Implemented as a backend foundation (see
+[`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md)).
+It is provider/site-neutral: it records *where* the agent may need to
+authenticate (`AuthProvider`), the current auth state (`AuthProviderState`),
+and *when a site requires human verification* (`Challenge` with a linked
+human-in-the-loop `WorkflowRun`). Key invariants:
+
+* No secrets are ever stored — only opaque references (`SecretReference`,
+  `session_reference`, `storage_reference`) resolved by an injected external
+  secrets provider.
+* No CAPTCHA/MFA/anti-bot bypass and no automatic resolution. A challenge is
+  closed only after an explicit human act, at which point the paused workflow
+  resumes exactly once.
+* Application automation is a **future phase**, not part of this foundation.
 
 ### 3.3 Specialized Agents
 

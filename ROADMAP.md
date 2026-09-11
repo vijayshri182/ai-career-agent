@@ -70,6 +70,34 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
 
 ---
 
+## Phase 1.5 — Authentication & Challenge Management (foundation)
+
+* **Objective:** Record, at a provider/site-neutral level, where the agent may need to authenticate and when a site requires human verification, without performing any automation.
+* **Features:**
+  * Auth provider CRUD (ATS, career site, job board, networking, email, other).
+  * Auth state machine (`NOT_CONFIGURED → AUTHENTICATED → ...`) with escalation states.
+  * Challenge detection/classification and durable challenge records (CAPTCHA, MFA/OTP, login, bot protection, rate limits).
+  * Human-in-the-loop workflow runs: a challenge pauses the linked workflow; it resumes exactly once after human resolution.
+  * Secrets/sessions/browser state stored only as opaque references (no secret values anywhere).
+* **Components:** `services/authentication_state.py`, `services/challenge_detection.py`, `services/human_in_loop.py`, `services/authentication.py` (facade), provider-neutral `services/auth_adapter.py` protocol, API router, Alembic migration.
+* **APIs:** `/api/v1/candidates/{candidate_id}/auth/*` — overview, providers + state, challenges (acknowledge/complete/cancel), workflow resume, browser sessions, secret references.
+* **Database changes:** Add `auth_providers`, `auth_provider_states`, `challenges`, `workflow_runs`, `browser_sessions`, `secret_references`.
+* **Tests:**
+  * Unit: AuthStateMachine + WorkflowStateMachine transitions; challenge classification rules.
+  * Integration: provider CRUD, initial state, idempotent challenge reporting, challenge ack→complete→workflow resume, cross-user 404s.
+* **Security:**
+  * No CAPTCHA/MFA/anti-bot bypass and no automatic resolution — human-in-the-loop only.
+  * No secret values in DB, logs, tests, or API; `LocalSecretsProvider` always reports unavailable.
+* **Acceptance criteria:**
+  * Reporting a challenge opens at most one in-flight challenge per provider/type (partial unique index).
+  * Completing a challenge resumes the paused workflow exactly once within the attempt/expiry budget.
+  * Full suite: 99 tests passing; `ruff check` and `mypy` clean.
+* **Dependencies:** Phase 1.
+* **Complexity:** M
+* **Status:** Implemented. See [`docs/architecture/authentication-and-challenges.md`](docs/architecture/authentication-and-challenges.md). Application automation is a **future phase**; this foundation only records state and coordinates pauses/resumes around human acts.
+
+---
+
 ## Phase 2 — Job Discovery
 
 * **Objective:** Discover job postings from legitimate, permitted sources and normalize/deduplicate them.
@@ -237,8 +265,8 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Pluggable ATS adapters using Playwright.
   * Site-policy check before automation.
   * Human checkpoint if automation is ambiguous.
-  * Secure credential/session manager.
-  * CAPTCHA/MFA detection with immediate stop + notification.
+  * Secure credential/session manager (reuses the Phase 1.5 reference-only secret model and `AuthProviderState.session_reference`).
+  * CAPTCHA/MFA detection with immediate stop + notification (reuses the Phase 1.5 challenge records and paused-workflow resume).
 * **Components:** `Application Automation Layer`, browser worker pool, credential vault.
 * **APIs:**
   * `POST /api/v1/applications/{id}/execute`
@@ -439,3 +467,8 @@ Phase 1 focuses on the **Candidate Profile**. This means:
 * Tests: unit, API, and UI smoke tests.
 
 No job discovery or automation is built in Phase 1.
+
+> **Addendum:** the **Authentication & Challenge Management foundation**
+> (above, Phase 1.5) has been completed in the backend. It introduces the
+> provider/auth-state/challenge/human-in-the-loop entities without enabling any
+> automation — site interaction remains fully manual.

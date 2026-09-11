@@ -14,8 +14,14 @@ from backend.db.engine import make_engine, make_session_factory
 from backend.models.candidate import Candidate
 from backend.models.user import User
 from backend.repositories.audit import AuditRepository
+from backend.repositories.authentication_provider import (
+    AuthProviderRepository,
+    AuthStateRepository,
+)
+from backend.repositories.browser_session import BrowserSessionRepository
 from backend.repositories.candidate import CandidateRepository
 from backend.repositories.certification import CertificationRepository
+from backend.repositories.challenge import ChallengeRepository
 from backend.repositories.education import EducationRepository
 from backend.repositories.experience import ExperienceRepository
 from backend.repositories.resume import (
@@ -23,15 +29,23 @@ from backend.repositories.resume import (
     ResumeRepository,
     ResumeVersionRepository,
 )
+from backend.repositories.secret_reference import SecretReferenceRepository
 from backend.repositories.skill import SkillRepository
 from backend.repositories.user import UserRepository
+from backend.repositories.workflow_run import WorkflowRunRepository
 from backend.services.auth import AuthService
+from backend.services.authentication import AuthenticationService
+from backend.services.authentication_provider import AuthProviderService
+from backend.services.browser_session import BrowserSessionManager
 from backend.services.candidate import CandidateService
 from backend.services.certification import CertificationService
+from backend.services.challenge import ChallengeService
 from backend.services.education import EducationService
 from backend.services.experience import ExperienceService
+from backend.services.human_in_loop import HumanInTheLoopService
 from backend.services.profile import ProfileService
 from backend.services.resume import ResumeService
+from backend.services.secrets import LocalSecretsProvider, SecretReferenceService
 from backend.services.skill import SkillService
 from backend.services.storage import make_storage
 
@@ -176,6 +190,51 @@ async def get_profile_service(session: AsyncSession = Depends(get_session)) -> P
         EducationRepository(session),
         CertificationRepository(session),
         ResumeRepository(session),
+    )
+
+
+async def get_authentication_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> AuthenticationService:
+    """Build candidate-scoped authentication services.
+
+    Ownership is enforced at the HTTP layer via `get_owned_candidate` (404 for
+    cross-user/non-existent candidates); services re-check ownership as
+    defense-in-depth.
+    """
+    actor_id = candidate.user_id
+    audit_repo = AuditRepository(session)
+    candidate_repo = CandidateRepository(session)
+    provider_repo = AuthProviderRepository(session)
+    state_repo = AuthStateRepository(session)
+    workflow_repo = WorkflowRunRepository(session)
+    challenge_repo = ChallengeRepository(session)
+    browser_repo = BrowserSessionRepository(session)
+    secret_repo = SecretReferenceRepository(session)
+
+    provider_service = AuthProviderService(
+        provider_repo, state_repo, candidate_repo, audit_repo, actor_id, candidate.id
+    )
+    workflow_service = HumanInTheLoopService(
+        workflow_repo, audit_repo, actor_id, candidate.id
+    )
+    challenge_service = ChallengeService(
+        challenge_repo, audit_repo, provider_service, workflow_service, actor_id, candidate.id
+    )
+    browser_manager = BrowserSessionManager(
+        browser_repo, provider_repo, audit_repo, actor_id, candidate.id
+    )
+    secret_service = SecretReferenceService(
+        secret_repo, audit_repo, LocalSecretsProvider(), actor_id, candidate.id
+    )
+    return AuthenticationService(
+        providers=provider_service,
+        challenges=challenge_service,
+        workflows=workflow_service,
+        browser_sessions=browser_manager,
+        secrets=secret_service,
     )
 
 
