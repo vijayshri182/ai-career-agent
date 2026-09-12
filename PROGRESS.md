@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `3fe9e79` (`feat: implement application preparation foundation`) |
+| HEAD SHA | `cc3f570` (`feat: implement human approval workflow`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -28,7 +28,13 @@
 | WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
 | WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | `eb8abc4` `feat: implement job matching engine` |
 | WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | `3fe9e79` `feat: implement application preparation foundation` |
-| WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | committed + pushed (see `Next Workstream` section below) |
+| WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | `cc3f570` `feat: implement human approval workflow` |
+
+## Current Workstream: WS-10 — Phase 5 Permitted Application Automation
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 5 completion: application
+automation runtime. Builds on the approved application-preparation (WS-8) and human-approval
+(WS-9) foundations.
 
 ---
 
@@ -276,7 +282,8 @@ and skills-answer narrative grounded to profile skills only (no verbatim match s
 
 ### Commit Status / Next Step
 
-- WS-8 awaiting commit (see Next Workstream).
+- WS-8 committed + pushed: `3fe9e79` `feat: implement application preparation foundation`.
+- Next: Phase 6 approval workflow (WS-9) — since completed.
 
 ### Known Risks / Issues
 
@@ -340,7 +347,8 @@ APIs, state-machine service, audit mirroring, and tests.
 
 ### Commit Status / Next Step
 
-- WS-9 committed + pushed; `HEAD == origin/main`, working tree clean.
+- WS-9 committed + pushed: `cc3f570` `feat: implement human approval workflow`; `HEAD == origin/main`,
+  working tree clean.
 - Next: **WS-10 — Phase 5 Permitted Application Automation** (policy check, workflow state machine,
   challenge handoff, duplicate-submission prevention, audit).
 
@@ -356,4 +364,4 @@ APIs, state-machine service, audit mirroring, and tests.
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** until WS-9 checkpoint is committed and verified.
+- Started: **NO** — WS-9 checkpoint committed (`cc3f570`) and verified; WS-10 begins next.
