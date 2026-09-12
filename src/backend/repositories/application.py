@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,6 +11,7 @@ from backend.models.application import (
     ApplicationAnswer,
     ApplicationDocument,
     ApplicationQuestion,
+    ApplicationStatus,
     DocumentType,
 )
 from backend.repositories.base import BaseRepository
@@ -63,6 +64,22 @@ class ApplicationRepository(BaseRepository[Application]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def count_for_candidate(self, candidate_id: UUID) -> int:
+        stmt = (
+            select(func.count()).select_from(Application).where(Application.candidate_id == candidate_id)
+        )
+        return int((await self.session.execute(stmt)).scalar_one())
+
+    async def count_by_status(self, candidate_id: UUID) -> dict[ApplicationStatus, int]:
+        stmt = (
+            select(Application.status, func.count())
+            .select_from(Application)
+            .where(Application.candidate_id == candidate_id)
+            .group_by(Application.status)
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return {ApplicationStatus(status): int(count) for status, count in rows}
 
 
 class ApplicationQuestionRepository(BaseRepository[ApplicationQuestion]):

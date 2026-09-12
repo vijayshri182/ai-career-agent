@@ -38,6 +38,7 @@ from backend.repositories.experience import ExperienceRepository
 from backend.repositories.job import JobRepository
 from backend.repositories.job_match import JobMatchRepository
 from backend.repositories.job_source import JobSourceRepository
+from backend.repositories.learning import FeedbackRepository, RecommendationRepository
 from backend.repositories.outreach import (
     OutreachMessageRepository,
     OutreachMessageVersionRepository,
@@ -59,6 +60,7 @@ from backend.repositories.user import UserRepository
 from backend.repositories.workflow_run import WorkflowRunRepository
 from backend.services.adapters.base import JobSourceAdapter
 from backend.services.adapters.generic_http import GenericHttpAdapter
+from backend.services.analytics import AnalyticsService
 from backend.services.application_automation import ApplicationAutomationService
 from backend.services.application_prep import ApplicationPrepService
 from backend.services.approval import ApprovalService
@@ -529,6 +531,40 @@ async def get_outreach_service(
         daily_limit=settings.outreach_daily_limit,
         max_attempts=settings.outreach_max_attempts,
         retry_base_seconds=settings.outreach_retry_base_seconds,
+    )
+
+
+async def get_analytics_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> AnalyticsService:
+    """Candidate-scoped learning / optimization service.
+
+    Ownership is enforced via `get_owned_candidate` (404 for cross-user or
+    non-existent candidates); the service re-checks ownership as
+    defense-in-depth. Feedback only records observed outcomes and
+    recommendations are purely suggestive (never edit facts).
+    """
+    settings = get_settings()
+    if not settings.analytics_enabled:
+        raise ForbiddenError("Analytics are disabled")
+    actor_id = candidate.user_id
+    return AnalyticsService(
+        candidate_repo=CandidateRepository(session),
+        job_repo=JobRepository(session),
+        match_repo=JobMatchRepository(session),
+        application_repo=ApplicationRepository(session),
+        skill_repo=SkillRepository(session),
+        experience_repo=ExperienceRepository(session),
+        education_repo=EducationRepository(session),
+        certification_repo=CertificationRepository(session),
+        message_repo=OutreachMessageRepository(session),
+        feedback_repo=FeedbackRepository(session),
+        recommendation_repo=RecommendationRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=actor_id,
+        candidate_id=candidate.id,
     )
 
 

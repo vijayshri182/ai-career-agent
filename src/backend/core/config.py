@@ -98,6 +98,8 @@ class Settings(BaseSettings):
         default=60, alias="OUTREACH_RETRY_BASE_SECONDS"
     )
 
+    analytics_enabled: bool = Field(default=True, alias="ANALYTICS_ENABLED")
+
     notification_enabled: bool = Field(default=True, alias="NOTIFICATION_ENABLED")
 
 

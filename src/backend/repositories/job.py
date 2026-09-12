@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.job import Job, JobStatus
@@ -14,6 +14,10 @@ from backend.repositories.base import BaseRepository
 class JobRepository(BaseRepository[Job]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Job)
+
+    async def count_for_candidate(self, candidate_id: UUID) -> int:
+        stmt = select(func.count()).select_from(Job).where(Job.candidate_id == candidate_id)
+        return int((await self.session.execute(stmt)).scalar_one())
 
     async def list_for_candidate(
         self,

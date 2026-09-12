@@ -435,6 +435,12 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
 ## Phase 12 — Learning / Optimization
 
 * **Objective:** Improve matching and search criteria from outcomes.
+* **Status:** DONE (WS-13) - feedback records observed outcomes only; explainable, purely suggestive
+  recommendations (skill gaps, profile completeness, apply tracking, source and outreach optimization) with
+  explicit rationale; runtime fairness guard (no protected attributes ever collected or used); recommendations
+  never auto-edit facts; analytics summary + generate/list/acknowledge/archive lifecycle. Analytics views were
+  intentionally delivered as read-model queries (summary endpoint) rather than DB views to stay index-friendly
+  on SQLite.
 * **Features:**
   * Analyze rejection patterns.
   * Recommend profile/resume improvements.
@@ -443,9 +449,14 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Feedback capture after interviews.
 * **Components:** `Learning Agent`, analytics pipeline.
 * **APIs:**
-  * `POST /api/v1/feedback`
-  * `GET /api/v1/recommendations`
-* **Database changes:** Add `feedbacks`, `recommendations`, analytics views.
+  * `POST /api/v1/candidates/{candidate_id}/feedback`
+  * `GET /api/v1/candidates/{candidate_id}/feedback`
+  * `GET /api/v1/candidates/{candidate_id}/analytics/summary`
+  * `POST /api/v1/candidates/{candidate_id}/recommendations/generate`
+  * `GET /api/v1/candidates/{candidate_id}/recommendations`
+  * `POST /api/v1/candidates/{candidate_id}/recommendations/{id}/acknowledge`
+  * `POST /api/v1/candidates/{candidate_id}/recommendations/{id}/archive`
+* **Database changes:** Add `feedbacks`, `recommendations` (migration `f6a7b8c9d1e2`).
 * **Tests:**
   * Learning recommendation tests.
   * Bias/fairness checks.

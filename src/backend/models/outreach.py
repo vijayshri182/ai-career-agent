@@ -30,6 +30,7 @@ from backend.db.base import IdModel
 if TYPE_CHECKING:
     from backend.models.candidate import Candidate
     from backend.models.job import Job
+    from backend.models.learning import Feedback
     from backend.models.recruiter_contact import RecruiterContact
 
 
@@ -123,6 +124,7 @@ class OutreachMessage(IdModel, table=True):
         back_populates="message",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+    feedbacks: list["Feedback"] = Relationship(back_populates="outreach_message")
 
 
 class OutreachMessageVersion(IdModel, table=True):

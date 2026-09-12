@@ -50,6 +50,13 @@ from backend.models.company import Company, CompanyVerificationStatus
 from backend.models.job import Job, JobStatus
 from backend.models.job_match import JobMatch, JobMatchStatus
 from backend.models.job_source import JobSource, JobSourceType
+from backend.models.learning import (
+    Feedback,
+    FeedbackOutcome,
+    Recommendation,
+    RecommendationKind,
+    RecommendationStatus,
+)
 from backend.models.outreach import (
     OutreachChannel,
     OutreachMessage,
@@ -115,6 +122,8 @@ __all__ = [
     "DocumentType",
     "Education",
     "Experience",
+    "Feedback",
+    "FeedbackOutcome",
     "Job",
     "JobMatch",
     "JobMatchStatus",
@@ -133,6 +142,9 @@ __all__ = [
     "QuestionCategory",
     "RawExtractionStatus",
     "RawJobExtraction",
+    "Recommendation",
+    "RecommendationKind",
+    "RecommendationStatus",
     "RecruiterContact",
     "Resume",
     "ResumeStatus",

@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `970f449` (`feat: implement recruiter contact discovery`) |
+| HEAD SHA | `c76a98a` (`feat: implement outreach engine (phase 9)`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -31,6 +31,7 @@
 | WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | `cc3f570` `feat: implement human approval workflow` |
 | WS-10 | Phase 5/7 — Permitted Application Automation (automation runs, policy gates, challenge handoff, retries, API) | Complete; committed + pushed | `89da2fc` `feat: implement permitted application automation` |
 | WS-11 | Phase 8 — Recruiter Contact Discovery (contact sources + contacts, confidence scoring, privacy-safe discovery service, APIs, migration, tests) | Complete; committed + pushed | `970f449` `feat: implement recruiter contact discovery` |
+| WS-12 | Phase 9 — Outreach Engine (writer grounded on verified facts, approval-gated send, runs, follow-ups, candidate-scoped API, tests) | Complete; committed + pushed | `c76a98a` `feat: implement outreach engine (phase 9)` |
 
 ---
 
@@ -581,13 +582,72 @@ must not be re-grounded.
 
 ---
 
+# WS-13 - Phase 12 Learning & Optimization (DONE)
+
+### What Was Implemented
+
+1. **Models + migration** — `models/learning.py`: `FeedbackOutcome` (offer_received, interview_requested,
+   rejected, ghosted, withdrawn, other), `Feedback` (nullable app/outreach-message references, outcome as
+   inferred `Enum` storing member NAMEs, happened_at), `RecommendationKind` (skill_gap,
+   profile_improvement, apply_optimization, source_optimization, outreach_optimization), `RecommendationStatus`
+   (active/acknowledged/archived), `Recommendation` (kind + source_key + title/detail + JSON `rationale`
+   list citing exact facts; unique `(candidate_id, kind, source_key)`). Hand-written migration
+   `f6a7b8c9d1e2_add_learning_optimization_foundation.py` (down_revision `e5f6a7b8c9d1`) with enum-width
+   VARCHAR columns + server_defaults and indexes; verified upgrade → downgrade → re-upgrade on a fresh DB and
+   a SQLModel round-trip on the migrated schema (enum instances + JSON rationale intact).
+2. **Repositories** — `learning.py`: `FeedbackRepository` (list/count/count_by_outcome with outcome filter)
+   and `RecommendationRepository` (get/get_by_key/list/count with status + kind filters). Extended
+   `repositories/application.py` (`count_for_candidate`, `count_by_status`) and `repositories/job.py`
+   (`count_for_candidate`) for analytics.
+3. **Service** — `services/analytics.py`: `AnalyticsService` (candidate-scoped) producing
+   `summary()` analytics (`ApplicationFunnel`, `MatchAnalytics`, `OutreachAnalytics`, `FeedbackAnalytics`,
+   `ProfileMetrics`) and purely suggestive `generate_recommendations()` rules: top-3 skill gaps derived from
+   match `missing_skills`, profile completeness (experience/education/certification/skills<3), apply tracking
+   when submissions exist but no recorded outcomes, source optimization when jobs found but nothing matched,
+   outreach optimization when responses are absent or below 25%. Invariants: feedback records observed outcomes
+   only; recommendations never edit facts (rationale cites exact candidate-owned facts); runtime fairness guard
+   (`_assert_fair`, word-token based) rejects any recommendation referencing protected attributes (never
+   collected). `refresh=True` archives stale ACTIVE recommendations; acknowledge/archive lifecycle audited.
+4. **Schemas/API** — `schemas/learning.py` + `api/v1/learning.py`: candidate-scoped router
+   (`POST /feedback`, `GET /feedback`, `GET /analytics/summary`, `POST /recommendations/generate?refresh=`,
+   `GET /recommendations`, `POST /recommendations/{id}/acknowledge`, `POST /recommendations/{id}/archive`),
+   `handle_domain_error` per handler, wired into `main.py` and `api/deps.py` (`get_analytics_service` gated on
+   `analytics_enabled`).
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **264 passed** (was 250 in WS-12) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src` | Success: no issues in 147 source files |
+| Migration | `alembic upgrade head` / `downgrade` / `upgrade head` + SQLModel round-trip | OK on fresh DB |
+
+New test files: `tests/unit/test_analytics_rules.py` (fairness guard: neutral language + embedded-word
+tokens like "manager"/"messages" not rejected, all protected terms rejected incl. case-insensitive, rationale
++ title scanned) and `tests/integration/api/test_learning.py` (feedback CRUD + filter totals, foreign
+application 404, analytics summary counts, deterministic + deduped generation that never edits facts,
+refresh archives stale advice, apply/outreach triggers, ack/archive lifecycle incl. archiving guard, candidate
+scoping).
+
+Notable fixes during WS-13: `list[str]` without `sa_column` breaks SQLModel model definition → explicit
+`Column(JSON)`; `Application.job_id`/`match_id` are real UUID columns so string binds crash → seed helpers pass
+UUID objects; `total` counts must honor the outcome/status/kind filters.
+
+### Commit Status / Next Step
+
+- WS-13 committed + pushed; `HEAD == origin/main`, working tree clean.
+- Next: **WS-14 — Phase 10 Notifications/Dashboard**.
+
+---
+
 ## Next Workstream
 
-1. **WS-13 — Phase 12 Learning & Analytics** — pending.
-2. Then: Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration, Phase 13 Production Hardening,
-   frontend dashboard completion, final QA.
+1. **WS-14 — Phase 10 Notifications/Dashboard** — pending.
+2. Then: Phase 11 24×7 Orchestration, Phase 13 Production Hardening, frontend dashboard completion,
+   final QA.
 
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** — WS-12 checkpoint committed and verified; WS-13 begins next.
+- Started: **NO** — WS-13 checkpoint committed and verified; WS-14 begins next.

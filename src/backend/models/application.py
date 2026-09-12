@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from backend.models.automation_run import AutomationRun
     from backend.models.candidate import Candidate
     from backend.models.job import Job
+    from backend.models.learning import Feedback
     from backend.models.resume import Resume
 
 
@@ -89,6 +90,7 @@ class Application(IdModel, table=True):
         back_populates="application", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     automation_runs: list["AutomationRun"] = Relationship(back_populates="application")
+    feedbacks: list["Feedback"] = Relationship(back_populates="application")
 
 
 class ApplicationQuestion(IdModel, table=True):

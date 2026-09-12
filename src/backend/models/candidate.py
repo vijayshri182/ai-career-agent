@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from backend.models.job import Job
     from backend.models.job_match import JobMatch
     from backend.models.job_source import JobSource
+    from backend.models.learning import Feedback, Recommendation
     from backend.models.outreach import OutreachMessage, OutreachRun
     from backend.models.raw_job_extraction import RawJobExtraction
     from backend.models.recruiter_contact import ContactSource, RecruiterContact
@@ -123,6 +124,8 @@ class Candidate(IdModel, table=True):
     contact_sources: list["ContactSource"] = Relationship(back_populates="candidate")
     outreach_messages: list["OutreachMessage"] = Relationship(back_populates="candidate")
     outreach_runs: list["OutreachRun"] = Relationship(back_populates="candidate")
+    feedbacks: list["Feedback"] = Relationship(back_populates="candidate")
+    recommendations: list["Recommendation"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):
