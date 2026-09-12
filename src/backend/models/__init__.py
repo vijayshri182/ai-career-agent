@@ -26,6 +26,7 @@ from backend.models.authentication import (
     AuthProviderType,
     AuthState,
 )
+from backend.models.automation_run import AutomationRun, AutomationRunStatus
 from backend.models.browser_session import BrowserSession, BrowserSessionStatus
 from backend.models.candidate import (
     Candidate,
@@ -74,6 +75,8 @@ __all__ = [
     "ApprovalKind",
     "ApprovalStatus",
     "AuditEvent",
+    "AutomationRun",
+    "AutomationRunStatus",
     "AuthProvider",
     "AuthProviderState",
     "AuthProviderType",

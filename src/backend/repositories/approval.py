@@ -53,6 +53,28 @@ class ApprovalRepository(BaseRepository[Approval]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_approved_for_target(
+        self,
+        candidate_id: UUID,
+        kind: ApprovalKind,
+        target_type: str,
+        target_id: UUID,
+    ) -> Approval | None:
+        stmt = (
+            select(Approval)
+            .where(
+                Approval.candidate_id == candidate_id,
+                Approval.kind == kind,
+                Approval.target_type == target_type,
+                Approval.target_id == target_id,
+                Approval.status == ApprovalStatus.APPROVED,
+            )
+            .order_by(Approval.__table__.c.decided_at.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def list_for_candidate(
         self,
         candidate_id: UUID,

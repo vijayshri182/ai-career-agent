@@ -27,6 +27,7 @@ from backend.repositories.authentication_provider import (
     AuthProviderRepository,
     AuthStateRepository,
 )
+from backend.repositories.automation_run import AutomationRunRepository
 from backend.repositories.browser_session import BrowserSessionRepository
 from backend.repositories.candidate import CandidateRepository
 from backend.repositories.certification import CertificationRepository
@@ -49,6 +50,7 @@ from backend.repositories.user import UserRepository
 from backend.repositories.workflow_run import WorkflowRunRepository
 from backend.services.adapters.base import JobSourceAdapter
 from backend.services.adapters.generic_http import GenericHttpAdapter
+from backend.services.application_automation import ApplicationAutomationService
 from backend.services.application_prep import ApplicationPrepService
 from backend.services.approval import ApprovalService
 from backend.services.auth import AuthService
@@ -258,6 +260,59 @@ async def get_authentication_service(
         workflows=workflow_service,
         browser_sessions=browser_manager,
         secrets=secret_service,
+    )
+
+
+async def get_application_automation_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> ApplicationAutomationService:
+    """Build the candidate-scoped permitted-application-automation service.
+
+    Ownership is enforced via `get_owned_candidate` (404 for cross-user or
+    non-existent candidates); the service re-checks ownership as
+    defense-in-depth. Submission safety gates (approved approval, source that
+    permits automation, challenge hand-off) live in the service itself.
+    """
+    settings = get_settings()
+    actor_id = candidate.user_id
+    audit_repo = AuditRepository(session)
+    candidate_repo = CandidateRepository(session)
+    provider_repo = AuthProviderRepository(session)
+    state_repo = AuthStateRepository(session)
+    workflow_repo = WorkflowRunRepository(session)
+    challenge_repo = ChallengeRepository(session)
+
+    provider_service = AuthProviderService(
+        provider_repo, state_repo, candidate_repo, audit_repo, actor_id, candidate.id
+    )
+    workflow_service = HumanInTheLoopService(
+        workflow_repo, audit_repo, actor_id, candidate.id
+    )
+    challenge_service = ChallengeService(
+        challenge_repo, audit_repo, provider_service, workflow_service, actor_id, candidate.id
+    )
+
+    return ApplicationAutomationService(
+        candidate_repo=candidate_repo,
+        job_repo=JobRepository(session),
+        company_repo=CompanyRepository(session),
+        job_source_repo=JobSourceRepository(session),
+        application_repo=ApplicationRepository(session),
+        document_repo=ApplicationDocumentRepository(session),
+        run_repo=AutomationRunRepository(session),
+        approval_repo=ApprovalRepository(session),
+        audit_repo=audit_repo,
+        challenge_repo=challenge_repo,
+        provider_service=provider_service,
+        challenge_service=challenge_service,
+        actor_id=actor_id,
+        candidate_id=candidate.id,
+        autonomy_level=settings.autonomy_level,
+        automation_enabled=settings.automation_enabled,
+        max_attempts=settings.automation_max_attempts,
+        retry_base_seconds=settings.automation_retry_base_seconds,
     )
 
 

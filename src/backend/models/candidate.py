@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from backend.models.application import Application
     from backend.models.approval import Approval
     from backend.models.authentication import AuthProvider
+    from backend.models.automation_run import AutomationRun
     from backend.models.browser_session import BrowserSession
     from backend.models.challenge import Challenge
     from backend.models.job import Job
@@ -115,6 +116,7 @@ class Candidate(IdModel, table=True):
     job_matches: list["JobMatch"] = Relationship(back_populates="candidate")
     applications: list["Application"] = Relationship(back_populates="candidate")
     approvals: list["Approval"] = Relationship(back_populates="candidate")
+    automation_runs: list["AutomationRun"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

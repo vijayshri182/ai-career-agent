@@ -82,6 +82,12 @@ class Settings(BaseSettings):
 
     autonomy_level: int = Field(default=2, alias="AUTONOMY_LEVEL")
 
+    automation_enabled: bool = Field(default=True, alias="AUTOMATION_ENABLED")
+    automation_max_attempts: int = Field(default=3, alias="AUTOMATION_MAX_ATTEMPTS")
+    automation_retry_base_seconds: int = Field(
+        default=60, alias="AUTOMATION_RETRY_BASE_SECONDS"
+    )
+
     outreach_daily_limit: int = Field(default=20, alias="OUTREACH_DAILY_LIMIT")
     outreach_approval_required: bool = Field(
         default=True, alias="OUTREACH_APPROVAL_REQUIRED"

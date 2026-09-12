@@ -5,8 +5,10 @@ from uuid import UUID
 
 from backend.core.exceptions import NotFoundError, ValidationError
 from backend.models.authentication import (
+    AuthenticationMethod,
     AuthProvider,
     AuthProviderState,
+    AuthProviderType,
     AuthState,
 )
 from backend.repositories.audit import AuditRepository
@@ -175,6 +177,33 @@ class AuthProviderService:
     async def get_state(self, provider_id: UUID) -> AuthProviderState:
         await self.get(provider_id)
         return await self.state_repo.get_for_provider_or_404(provider_id)
+
+    async def get_or_create_for_site(
+        self,
+        *,
+        name: str,
+        base_url: str | None,
+        provider_type: AuthProviderType,
+        authentication_method: AuthenticationMethod,
+    ) -> AuthProvider:
+        """Return the candidate's provider with this name, creating it if absent.
+
+        Used by the automation layer to describe the site where a submission
+        happens so human challenges can be recorded against a real provider row.
+        """
+        await self._assert_owned()
+        for provider in await self.provider_repo.list_by_candidate(self.candidate_id):
+            if provider.name == name:
+                return provider
+        return await self.create(
+            ProviderCreate(
+                name=name,
+                provider_type=provider_type,
+                base_url=base_url,
+                authentication_method=authentication_method,
+                is_enabled=True,
+            )
+        )
 
     async def set_session_reference(
         self, provider_id: UUID, session_reference: str
