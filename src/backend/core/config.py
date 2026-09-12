@@ -80,6 +80,15 @@ class Settings(BaseSettings):
     )
     match_threshold: float = Field(default=70.0, alias="MATCH_THRESHOLD")
 
+    autonomy_level: int = Field(default=2, alias="AUTONOMY_LEVEL")
+
+    outreach_daily_limit: int = Field(default=20, alias="OUTREACH_DAILY_LIMIT")
+    outreach_approval_required: bool = Field(
+        default=True, alias="OUTREACH_APPROVAL_REQUIRED"
+    )
+
+    notification_enabled: bool = Field(default=True, alias="NOTIFICATION_ENABLED")
+
 
 @lru_cache
 def get_settings() -> Settings:

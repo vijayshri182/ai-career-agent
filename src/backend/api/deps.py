@@ -21,6 +21,7 @@ from backend.repositories.application import (
     ApplicationQuestionRepository,
     ApplicationRepository,
 )
+from backend.repositories.approval import ApprovalDecisionRepository, ApprovalRepository
 from backend.repositories.audit import AuditRepository
 from backend.repositories.authentication_provider import (
     AuthProviderRepository,
@@ -49,6 +50,7 @@ from backend.repositories.workflow_run import WorkflowRunRepository
 from backend.services.adapters.base import JobSourceAdapter
 from backend.services.adapters.generic_http import GenericHttpAdapter
 from backend.services.application_prep import ApplicationPrepService
+from backend.services.approval import ApprovalService
 from backend.services.auth import AuthService
 from backend.services.authentication import AuthenticationService
 from backend.services.authentication_provider import AuthProviderService
@@ -356,6 +358,28 @@ async def get_application_prep_service(
         answer_repo=ApplicationAnswerRepository(session),
         document_repo=ApplicationDocumentRepository(session),
         audit_repo=AuditRepository(session),
+    )
+
+
+async def get_approval_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> ApprovalService:
+    """Candidate-scoped approval service.
+
+    The actor is derived from the owned candidate (actor acts on their own
+    candidate only). The service re-checks ownership as defense-in-depth.
+    """
+    settings = get_settings()
+    return ApprovalService(
+        approval_repo=ApprovalRepository(session),
+        decision_repo=ApprovalDecisionRepository(session),
+        candidate_repo=CandidateRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=candidate.user_id,
+        candidate_id=candidate.id,
+        autonomy_level=settings.autonomy_level,
     )
 
 

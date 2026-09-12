@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from backend.api.deps import make_discovery_service
 from backend.api.v1.applications import router as applications_router
+from backend.api.v1.approvals import router as approvals_router
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.authentication import router as authentication_router
 from backend.api.v1.candidate import router as candidate_router
@@ -133,3 +134,4 @@ app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(discoveries_router, prefix="/api/v1")
 app.include_router(matching_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")
+app.include_router(approvals_router, prefix="/api/v1")

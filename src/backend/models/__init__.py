@@ -11,6 +11,13 @@ from backend.models.application import (
     DocumentType,
     QuestionCategory,
 )
+from backend.models.approval import (
+    Approval,
+    ApprovalDecision,
+    ApprovalDecisionType,
+    ApprovalKind,
+    ApprovalStatus,
+)
 from backend.models.audit import AuditEvent
 from backend.models.authentication import (
     AuthenticationMethod,
@@ -61,6 +68,11 @@ __all__ = [
     "ApplicationDocument",
     "ApplicationQuestion",
     "ApplicationStatus",
+    "Approval",
+    "ApprovalDecision",
+    "ApprovalDecisionType",
+    "ApprovalKind",
+    "ApprovalStatus",
     "AuditEvent",
     "AuthProvider",
     "AuthProviderState",

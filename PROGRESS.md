@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `eb8abc4` (`feat: implement job matching engine`) |
+| HEAD SHA | `3fe9e79` (`feat: implement application preparation foundation`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -27,7 +27,8 @@
 | WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
 | WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
 | WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | `eb8abc4` `feat: implement job matching engine` |
-| WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | <pending commit> |
+| WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | `3fe9e79` `feat: implement application preparation foundation` |
+| WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | committed + pushed (see `Next Workstream` section below) |
 
 ---
 
@@ -287,12 +288,72 @@ and skills-answer narrative grounded to profile skills only (no verbatim match s
 
 ---
 
+## Current Workstream: WS-9 — Phase 6 Human Approval Workflow (backend)
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 6 (Human Approval Workflow, backend).
+**Workstream:** Explicit human-in-the-loop gate before external actions (application submission, and
+later outreach send): `approvals` records with an append-only `approval_decisions` log, candidate-scoped
+APIs, state-machine service, audit mirroring, and tests.
+
+### What Was Implemented
+
+1. **Models + migration** — `models/approval.py`: `Approval` (kind application_submission/outreach_send,
+   status pending/approved/rejected/snoozed/cancelled, generic `target_type`+`target_id`, optional
+   `application_id` FK, autonomy-level snapshot, summary/context JSON, decided_by/at + note,
+   `snoozed_until`) and append-only `ApprovalDecision`. Migration `c3a0912b7d01`
+   (`down_revision = b2fe40980eea`); apply + full downgrade + re-apply verified on fresh SQLite.
+2. **Service** — `services/approval.py`: `ApprovalService` (candidate-scoped, actor derived from the
+   owned candidate, ownership re-checked in service). `request_approval` is idempotent (one open
+   approval per candidate/kind/target). `decide` enforces the state machine
+   (pending|snoozed → approved/rejected/cancelled; pending → snoozed with future `until`); terminal
+   states reject further decisions with `ValidationError`. Every decision written to
+   `approval_decisions` (append-only) and mirrored to `audit_events`.
+3. **Config + API** — `AUTONOMY_LEVEL` (default 2 = prepare + approve). Router `api/v1/approvals.py`
+   under `/candidates/{candidate_id}`: list/get, approve/reject/snooze/cancel, and
+   `POST /candidates/{cid}/applications/{application_id}/approval-request` (builds context from the
+   prepared application). All routes depend on `get_owned_candidate` + `handle_domain_error`.
+4. **Tests** — `tests/unit/test_approval_service.py` (9): idempotent request, state transitions,
+   snooze validation, terminal-state guard, ownership-hiding, decisions recorded, list filters and
+   counts. `tests/integration/api/test_approval_workflow.py` (4): request flow (idempotent, listing),
+   approve→reject 400 on terminal, decisions readable, snooze/cancel, cross-user 404.
+
+### Files Changed (WS-9)
+
+**New:** `src/backend/models/approval.py`, `src/backend/schemas/approval.py`,
+`src/backend/repositories/approval.py`, `src/backend/services/approval.py`,
+`src/backend/api/v1/approvals.py`,
+`migrations/versions/c3a0912b7d01_add_approval_workflow_foundation.py`,
+`tests/unit/test_approval_service.py`, `tests/integration/api/test_approval_workflow.py`.
+
+**Modified:** `src/backend/models/__init__.py` (exports), `src/backend/models/candidate.py`
+(`approvals` relationship), `src/backend/core/config.py` (autonomy level), `src/backend/api/deps.py`
+(`get_approval_service`), `src/backend/app/main.py` (router), `PROGRESS.md`.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **200 passed** (was 187 in WS-8) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 122 files |
+| Migration | `alembic upgrade head` / `downgrade base` / `upgrade head` | apply + full downgrade + re-apply OK on fresh DB |
+
+### Commit Status / Next Step
+
+- WS-9 committed + pushed; `HEAD == origin/main`, working tree clean.
+- Next: **WS-10 — Phase 5 Permitted Application Automation** (policy check, workflow state machine,
+  challenge handoff, duplicate-submission prevention, audit).
+
+---
+
 ## Next Workstream
 
-1. **Commit + push the WS-8 checkpoint** (current working tree).
-2. **Phase 6 — Human Approval Workflow** — not started, not approved.
+1. **WS-10 — Phase 5 (ROADMAP Phase 7) Permitted Application Automation** — pending.
+2. Then: Phase 8 Recruiter Contact Discovery, Phase 9 Outreach Engine, Phase 12 Learning & Analytics,
+   Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration, Phase 13 Production Hardening,
+   frontend dashboard completion, final QA.
 
 ## Next Workstream Status
 
-- Approved: **YES for commit/push of WS-8** (Phase 5 application preparation checkpoint per plan).
-- Started: **NO** (Phase 6 not started until the checkpoint is committed and verified).
+- Approved: **auto-continue per mission directive** (finish the product end-to-end).
+- Started: **NO** until WS-9 checkpoint is committed and verified.
