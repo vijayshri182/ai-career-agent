@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `ec9fee7` (`feat: implement job discovery foundation`) |
+| HEAD SHA | `eb8abc4` (`feat: implement job matching engine`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -26,7 +26,7 @@
 | WS-4 | Phase 1 — authentication & challenge management foundation (provider-neutral auth state, challenges, workflows, secret references) | Complete | `73b5506` `feat: add authentication and challenge management foundation` |
 | WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
 | WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
-| WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | pending commit `feat: implement job matching engine` |
+| WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | `eb8abc4` `feat: implement job matching engine` |
 
 ---
 
@@ -180,7 +180,7 @@ weights test asserts partial-override total (not forced to 100).
 
 ### Commit Status / Next Step
 
-- WS-7 to be committed + pushed: `feat: implement job matching engine`; then `HEAD == origin/main`,
+- WS-7 committed + pushed: `eb8abc4` `feat: implement job matching engine`; `HEAD == origin/main`,
   working tree clean.
 
 ### Known Risks / Issues
