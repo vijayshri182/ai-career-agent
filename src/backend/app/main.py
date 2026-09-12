@@ -21,6 +21,7 @@ from backend.api.v1.education import router as education_router
 from backend.api.v1.experience import router as experience_router
 from backend.api.v1.jobs import router as jobs_router
 from backend.api.v1.matching import router as matching_router
+from backend.api.v1.outreach import router as outreach_router
 from backend.api.v1.recruiter_contacts import router as recruiter_contacts_router
 from backend.api.v1.resumes import router as resumes_router
 from backend.api.v1.skills import router as skills_router
@@ -139,3 +140,4 @@ app.include_router(applications_router, prefix="/api/v1")
 app.include_router(approvals_router, prefix="/api/v1")
 app.include_router(automation_router, prefix="/api/v1")
 app.include_router(recruiter_contacts_router, prefix="/api/v1")
+app.include_router(outreach_router, prefix="/api/v1")

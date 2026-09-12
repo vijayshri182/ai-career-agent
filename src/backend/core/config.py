@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     outreach_approval_required: bool = Field(
         default=True, alias="OUTREACH_APPROVAL_REQUIRED"
     )
+    outreach_enabled: bool = Field(default=True, alias="OUTREACH_ENABLED")
+    outreach_max_attempts: int = Field(default=3, alias="OUTREACH_MAX_ATTEMPTS")
+    outreach_retry_base_seconds: int = Field(
+        default=60, alias="OUTREACH_RETRY_BASE_SECONDS"
+    )
 
     notification_enabled: bool = Field(default=True, alias="NOTIFICATION_ENABLED")
 

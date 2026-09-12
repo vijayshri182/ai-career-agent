@@ -517,17 +517,77 @@ NotFoundError rather than returning empty (consistent privacy behaviour).
 
 - WS-11 committed + pushed: `970f449` `feat: implement recruiter contact discovery`; `HEAD == origin/main`,
   working tree clean.
-- Next: **WS-12 — Phase 9 Outreach Engine**.
+- Next: **WS-13 — Phase 12 Learning & Analytics**.
+
+---
+
+# WS-12 — Phase 9 Outreach Engine (DONE)
+
+### Deliverables
+
+- **Models** (`src/backend/models/outreach.py`): `OutreachMessage` (candidate-scoped message to a VERIFIED
+  recruiter contact; status lifecycle DRAFT → PENDING_APPROVAL → APPROVED → SENT, plus FAILED/CANCELLED;
+  `parent_id` self-FK for follow-ups with `is_follow_up`; append-only `fact_sources` provenance),
+  `OutreachMessageVersion` (versioned subject/body snapshots; unique per-message version numbers), `OutreachRun`
+  (durable send-attempt workflow; partial unique index `uq_outreach_runs_open_message` on non-terminal runs so a
+  message can never be sent twice concurrently; bounded retries with exponential backoff via `next_retry_at`).
+  Enum columns follow the codebase convention: no explicit `sa_column`, so SQLAlchemy's inferred `Enum` type maps
+  VARCHAR columns to enum instances on read (member names stored, e.g. `DRAFT`), which is what makes
+  `message.status.value` etc. safe post-load.
+- **Migration** `e5f6a7b8c9d1_add_outreach_foundation.py`: creates the three tables + indexes, mirroring the
+  inferred-Enum column widths and name-based server defaults. Verified `upgrade head` → `downgrade` → `upgrade head`.
+- **Repos** (`repositories/outreach.py`): message/version/run CRUD, `count_sent_since` (SENT + `sent_at`),
+  `count_responded` for status summary.
+- **Writer** (`services/outreach_writer.py`): deterministic, fact-grounded `DeterministicOutreachWriter` +
+  `ContactGroundedValidator` (rejects invented entities/claims and known skills absent from the profile;
+  allows contact identity/job/company candidates). Initial drafts, job+company subjects
+  ("Application for … at …"), no-job subjects ("Introduction from …") and `Re:` follow-ups all pass grounding.
+  `application_prep._FRAMING` extended with prose-only words ("application", "introduction", "from", "re", …) —
+  skill-like tokens intentionally excluded so `test_known_skill_not_in_profile_is_flagged` keeps passing.
+- **Adapter** (`services/outreach_adapter.py`): `OutreachPayload`, `SendOutcome`, `OutreachSender` protocol,
+  network-free `RecordingSender`, `make_sender()`.
+- **Service** (`services/outreach.py`): create draft (verified + unsuppressed contact + confidence >= 70 surface
+  gate), create follow-up (parent must be SENT), versioned edits (human edits are trusted — the grounding guard
+  protects generated content; the human approval gate is the safety control), submit for approval (reuses
+  `ApprovalService`), cancel, send (status gate, live approval check flips PENDING_APPROVAL→APPROVED, verified
+  email destination required, per-candidate daily cap, active/retry-pending run guard, run creation + attempt),
+  bounded retry with backoff, record response, mark suppressed (blocks future outreach), list/get runs + messages,
+  status summary, full audit logging.
+- **Schemas/API** (`schemas/outreach.py`, `api/v1/outreach.py`): candidate-scoped router with
+  `dependencies=[Depends(get_owned_candidate)]`; drains/`handle_domain_error` per handler; wired into `main.py`
+  and `api/deps.py` (`get_outreach_service` reconstructs `ApprovalService` + all repos).
+- **Config**: `outreach_enabled` (True), `outreach_max_attempts` (3), `outreach_retry_base_seconds` (60);
+  `outreach_approval_required`, `outreach_daily_limit` already present.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **250 passed** (was 236 in WS-11) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src` | Success: no issues in 142 source files |
+| Migration | `alembic upgrade head` / `downgrade` / `upgrade head` | apply + drop + re-apply OK on fresh DB |
+
+Notable fixes during WS-12: enum columns must NOT pass `sa_column=Column(String(...))` (loads become plain `str`,
+crashing `status.value`); `parent_id` must be a real UUID self-FK (String column rejects UUID binds); the partial
+unique-run index predicate must match the stored enum member names (`PENDING`/`RUNNING`); generated subjects start
+with capitalized prose tokens that grounding would flag — fixed via prose-only `_FRAMING` additions; human edits
+must not be re-grounded.
+
+### Commit Status / Next Step
+
+- WS-12 committed + pushed; `HEAD == origin/main`, working tree clean.
+- Next: **WS-13 — Phase 12 Learning & Analytics**.
 
 ---
 
 ## Next Workstream
 
-1. **WS-12 — Phase 9 Outreach Engine** — pending.
-2. Then: Phase 12 Learning & Analytics, Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration,
-   Phase 13 Production Hardening, frontend dashboard completion, final QA.
+1. **WS-13 — Phase 12 Learning & Analytics** — pending.
+2. Then: Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration, Phase 13 Production Hardening,
+   frontend dashboard completion, final QA.
 
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** — WS-11 checkpoint committed (`970f449`) and verified; WS-12 begins next.
+- Started: **NO** — WS-12 checkpoint committed and verified; WS-13 begins next.

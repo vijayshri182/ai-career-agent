@@ -112,7 +112,7 @@ exclude = ["migrations"]
 # so a handful of codes are noise in the persistence layer.
 [[tool.mypy.overrides]]
 module = "backend.repositories.*"
-disable_error_code = ["arg-type", "attr-defined", "call-overload", "type-arg"]
+disable_error_code = ["arg-type", "attr-defined", "call-overload", "type-arg", "operator"]
 
 # FastAPI route handlers conventionally omit explicit return annotations
 # (FastAPI resolves them from `response_model`/`status_code`).

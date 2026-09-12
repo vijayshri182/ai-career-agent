@@ -38,6 +38,11 @@ from backend.repositories.experience import ExperienceRepository
 from backend.repositories.job import JobRepository
 from backend.repositories.job_match import JobMatchRepository
 from backend.repositories.job_source import JobSourceRepository
+from backend.repositories.outreach import (
+    OutreachMessageRepository,
+    OutreachMessageVersionRepository,
+    OutreachRunRepository,
+)
 from backend.repositories.raw_job_extraction import RawJobExtractionRepository
 from backend.repositories.recruiter_contact import (
     ContactSourceRepository,
@@ -72,6 +77,7 @@ from backend.services.job import JobService
 from backend.services.job_source import JobSourceService
 from backend.services.matching import JobMatchingService, JobMatchScorer, ScoreWeights
 from backend.services.normalization import JobNormalizer
+from backend.services.outreach import OutreachService
 from backend.services.profile import ProfileService
 from backend.services.recruiter_directory import make_directory_fetcher
 from backend.services.recruiter_discovery import RecruiterDiscoveryService
@@ -468,6 +474,61 @@ async def get_recruiter_discovery_service(
         actor_id=actor_id,
         candidate_id=candidate.id,
         directory_fetcher=make_directory_fetcher(),
+    )
+
+
+async def get_outreach_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> OutreachService:
+    """Candidate-scoped outreach service.
+
+    Ownership is enforced via `get_owned_candidate` (404 for cross-user or
+    non-existent candidates); the service re-checks ownership as
+    defense-in-depth. Sending is gated on APPROVED approval, a verified
+    destination, an unsuppressed VERIFIED contact, and the daily cap, all in
+    the service itself.
+    """
+    settings = get_settings()
+    if not settings.outreach_enabled:
+        raise ForbiddenError("Outreach is disabled")
+    actor_id = candidate.user_id
+    audit_repo = AuditRepository(session)
+    approval_repo = ApprovalRepository(session)
+    approval_service = ApprovalService(
+        approval_repo=approval_repo,
+        decision_repo=ApprovalDecisionRepository(session),
+        candidate_repo=CandidateRepository(session),
+        audit_repo=audit_repo,
+        actor_id=actor_id,
+        candidate_id=candidate.id,
+        autonomy_level=settings.autonomy_level,
+    )
+    return OutreachService(
+        candidate_repo=CandidateRepository(session),
+        contact_repo=RecruiterContactRepository(session),
+        job_repo=JobRepository(session),
+        company_repo=CompanyRepository(session),
+        skill_repo=SkillRepository(session),
+        experience_repo=ExperienceRepository(session),
+        education_repo=EducationRepository(session),
+        certification_repo=CertificationRepository(session),
+        match_repo=JobMatchRepository(session),
+        application_repo=ApplicationRepository(session),
+        message_repo=OutreachMessageRepository(session),
+        version_repo=OutreachMessageVersionRepository(session),
+        run_repo=OutreachRunRepository(session),
+        audit_repo=audit_repo,
+        approval_repo=approval_repo,
+        approval_service=approval_service,
+        actor_id=actor_id,
+        candidate_id=candidate.id,
+        autonomy_level=settings.autonomy_level,
+        approval_required=settings.outreach_approval_required,
+        daily_limit=settings.outreach_daily_limit,
+        max_attempts=settings.outreach_max_attempts,
+        retry_base_seconds=settings.outreach_retry_base_seconds,
     )
 
 

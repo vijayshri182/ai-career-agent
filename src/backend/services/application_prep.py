@@ -125,6 +125,7 @@ class _FactKind(str, Enum):
     CERTIFICATION = "certification"
     MATCH = "match"
     JOB = "job"
+    CONTACT = "contact"
 
 
 @dataclass
@@ -347,6 +348,18 @@ class FactGroundingValidator:
         "manager",
         "engineering",
         "platform",
+        "application",
+        "applications",
+        "introduction",
+        "from",
+        "re",
+        "regarding",
+        "follow",
+        "followup",
+        "interested",
+        "interest",
+        "remain",
+        "understand",
         "tl",
         "dr",
         "mr",

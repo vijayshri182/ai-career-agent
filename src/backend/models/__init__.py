@@ -50,6 +50,15 @@ from backend.models.company import Company, CompanyVerificationStatus
 from backend.models.job import Job, JobStatus
 from backend.models.job_match import JobMatch, JobMatchStatus
 from backend.models.job_source import JobSource, JobSourceType
+from backend.models.outreach import (
+    OutreachChannel,
+    OutreachMessage,
+    OutreachMessageVersion,
+    OutreachRun,
+    OutreachRunStatus,
+    OutreachStatus,
+    ResponseStatus,
+)
 from backend.models.raw_job_extraction import RawExtractionStatus, RawJobExtraction
 from backend.models.recruiter_contact import (
     ContactSource,
@@ -112,6 +121,12 @@ __all__ = [
     "JobSource",
     "JobSourceType",
     "JobStatus",
+    "OutreachChannel",
+    "OutreachMessage",
+    "OutreachMessageVersion",
+    "OutreachRun",
+    "OutreachRunStatus",
+    "OutreachStatus",
     "ParsedResume",
     "Proficiency",
     "ProfileStatus",
@@ -123,6 +138,7 @@ __all__ = [
     "ResumeStatus",
     "ResumeType",
     "ResumeVersion",
+    "ResponseStatus",
     "SecretReference",
     "SecretReferenceStatus",
     "SecretType",

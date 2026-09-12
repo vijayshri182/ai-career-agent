@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from backend.models.candidate import Candidate
     from backend.models.company import Company
     from backend.models.job import Job
+    from backend.models.outreach import OutreachMessage
 
 
 class ContactSourceType(str, Enum):
@@ -109,3 +110,4 @@ class RecruiterContact(IdModel, table=True):
     company: "Company" = Relationship(back_populates="recruiter_contacts")
     job: Optional["Job"] = Relationship(back_populates="recruiter_contacts")
     source: "ContactSource" = Relationship(back_populates="contacts")
+    outreach_messages: list["OutreachMessage"] = Relationship(back_populates="contact")

@@ -347,6 +347,9 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
 ## Phase 9 — Outreach Engine
 
 * **Objective:** Prepare personalized recruiter and networking messages; require approval before sending.
+* **Status:** DONE (WS-12) — deterministic fact-grounded writer; candidate-scoped messages/runs/versions;
+  human-approval gate; verified-destination check; per-candidate daily cap; retry/backoff; response/suppression
+  handling; openflow audit trail. Real senders are pluggable (`OutreachSender` — network-free `make_sender()` today).
 * **Features:**
   * Draft recruiter emails from verified contacts.
   * Draft networking connection requests.
@@ -355,9 +358,11 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Approval workflow integration.
 * **Components:** `Outreach Agent`, email client abstraction.
 * **APIs:**
-  * `POST /api/v1/outreach/draft`
-  * `POST /api/v1/outreach/{id}/send`
-* **Database changes:** Add `outreach_messages`, `outreach_runs`.
+  * `POST /api/v1/candidates/{candidate_id}/outreach/drafts`
+  * `POST /api/v1/candidates/{candidate_id}/outreach/follow-ups`
+  * `POST /api/v1/candidates/{candidate_id}/outreach/messages/{id}/submit`
+  * `POST /api/v1/candidates/{candidate_id}/outreach/messages/{id}/send`
+* **Database changes:** Add `outreach_messages`, `outreach_message_versions`, `outreach_runs`.
 * **Tests:**
   * Message personalization tests.
   * Rate-limit tests.
