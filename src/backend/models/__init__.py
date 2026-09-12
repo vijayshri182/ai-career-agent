@@ -30,6 +30,7 @@ from backend.models.challenge import (
 )
 from backend.models.company import Company, CompanyVerificationStatus
 from backend.models.job import Job, JobStatus
+from backend.models.job_match import JobMatch, JobMatchStatus
 from backend.models.job_source import JobSource, JobSourceType
 from backend.models.raw_job_extraction import RawExtractionStatus, RawJobExtraction
 from backend.models.resume import ParsedResume, Resume, ResumeStatus, ResumeType, ResumeVersion
@@ -65,6 +66,8 @@ __all__ = [
     "Education",
     "Experience",
     "Job",
+    "JobMatch",
+    "JobMatchStatus",
     "JobSource",
     "JobSourceType",
     "JobStatus",

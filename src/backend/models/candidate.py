@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from backend.models.browser_session import BrowserSession
     from backend.models.challenge import Challenge
     from backend.models.job import Job
+    from backend.models.job_match import JobMatch
     from backend.models.job_source import JobSource
     from backend.models.raw_job_extraction import RawJobExtraction
     from backend.models.resume import Resume
@@ -109,6 +110,7 @@ class Candidate(IdModel, table=True):
     job_sources: list["JobSource"] = Relationship(back_populates="candidate")
     jobs: list["Job"] = Relationship(back_populates="candidate")
     job_extractions: list["RawJobExtraction"] = Relationship(back_populates="candidate")
+    job_matches: list["JobMatch"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

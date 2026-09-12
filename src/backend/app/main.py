@@ -17,6 +17,7 @@ from backend.api.v1.discoveries import router as discoveries_router
 from backend.api.v1.education import router as education_router
 from backend.api.v1.experience import router as experience_router
 from backend.api.v1.jobs import router as jobs_router
+from backend.api.v1.matching import router as matching_router
 from backend.api.v1.resumes import router as resumes_router
 from backend.api.v1.skills import router as skills_router
 from backend.api.v1.sources import router as sources_router
@@ -129,3 +130,4 @@ app.include_router(resumes_router, prefix="/api/v1")
 app.include_router(sources_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(discoveries_router, prefix="/api/v1")
+app.include_router(matching_router, prefix="/api/v1")

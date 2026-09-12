@@ -70,6 +70,16 @@ class Settings(BaseSettings):
         default=10, alias="DISCOVERY_DEFAULT_REQUESTS_PER_MINUTE"
     )
 
+    match_rules_version: str = Field(default="3.0.0", alias="MATCH_RULES_VERSION")
+    match_weights: str = Field(
+        default=(
+            "skills=25,role_alignment=20,seniority=10,years_experience=10,domain=10,"
+            "industry=5,leadership=5,location=5,work_mode=5,compensation=5"
+        ),
+        alias="MATCH_WEIGHTS",
+    )
+    match_threshold: float = Field(default=70.0, alias="MATCH_THRESHOLD")
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -193,6 +193,17 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * Scoring latency < 5s per job.
 * **Dependencies:** Phase 3.
 * **Complexity:** L
+* **Status:** Implemented (backend foundation). Deterministic, explainable scoring engine with ten
+  transparent components (skills, role alignment, seniority, years experience, domain, industry,
+  leadership, location, work mode, compensation); configurable weights (`MATCH_WEIGHTS`), threshold
+  (`MATCH_THRESHOLD`), and rules version (`MATCH_RULES_VERSION`); job-text parsing treats descriptions
+  as **untrusted input** (never overrides rules — prompt-injection invariant test); semantic skill
+  matching is a pluggable protocol with a deterministic default; per-candidate+job results are
+  persisted idempotently (`job_matches`), exposed under
+  `/api/v1/candidates/{candidate_id}/jobs/{job_id}/match`,
+  `/api/v1/candidates/{candidate_id}/matching/evaluate`, and
+  `/api/v1/candidates/{candidate_id}/matches`. Runnable headless later via
+  `score_for_orchestrator`.
 
 ---
 

@@ -13,6 +13,7 @@ from backend.db.base import IdModel
 if TYPE_CHECKING:
     from backend.models.candidate import Candidate
     from backend.models.company import Company
+    from backend.models.job_match import JobMatch
     from backend.models.job_source import JobSource
     from backend.models.raw_job_extraction import RawJobExtraction
 
@@ -68,6 +69,7 @@ class Job(IdModel, table=True):
     candidate: "Candidate" = Relationship(back_populates="jobs")
     company: "Company" = Relationship(back_populates="jobs")
     source: "JobSource" = Relationship(back_populates="jobs")
+    matches: list["JobMatch"] = Relationship(back_populates="job")
     extractions: list["RawJobExtraction"] = Relationship(
         back_populates="job", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )

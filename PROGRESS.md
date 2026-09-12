@@ -26,6 +26,7 @@
 | WS-4 | Phase 1 — authentication & challenge management foundation (provider-neutral auth state, challenges, workflows, secret references) | Complete | `73b5506` `feat: add authentication and challenge management foundation` |
 | WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
 | WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
+| WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | pending commit `feat: implement job matching engine` |
 
 ---
 
@@ -106,12 +107,96 @@ groups lacking allow/disallow; discovery tests created sources disabled (must en
 
 ---
 
+## Current Workstream: WS-7 — Phase 4 AI Job Matching (backend)
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 4 (AI Job Matching, backend).
+**Workstream:** Deterministic, explainable job-matching engine: job-text parsing, candidate profile
+projection, ten-component weighted scoring, skills vocabulary + synonym matching, idempotent
+persistence (`job_matches`), Alembic migration, canddate-scoped APIs, and tests.
+
+### What Was Implemented
+
+1. **Models + migration** — `JobMatch` + `JobMatchStatus` (PENDING/MATCHED/REJECTED) in
+   `models/job_match.py`; new table `job_matches` by hand-written migration `6b7f1d3c8a22`
+   (`down_revision = 5e5f4c256726`) with `uq_job_matches_candidate_job` unique constraint, indexes on
+   `candidate_id`/`job_id`/`status`/`is_match`, JSON text columns, `rules_version`, `evaluated_at`.
+   Verified apply + downgrade on a fresh SQLite DB. Enum columns store member NAMEs (UPPERCASE).
+2. **Skills vocabulary** — `services/skills.py`: `SKILLS` (~140 skills), `SYNONYMS`, `RELATED`,
+   `EXTRACTION_PATTERNS`, `canonical_skill()`, `SkillExtractor`, and the `SemanticSkillMatcher`
+   protocol with deterministic `SynonymSkillMatcher` (default) and `NoopSkillMatcher` stubs. A
+   vector/embedding matcher is allowed later but may only *broaden related-skill credit*, never weaken
+   hard requirements.
+3. **Scoring engine** — `services/matching.py`: `ScoreWeights` (`MATCH_WEIGHTS`, defaults sum to 100;
+   partial overrides keep other defaults; scorer normalizes by total), `JobTextParser` (line-preserving
+   section detection for required vs preferred skills, years, salary scales LPA/lakh/k, work modes,
+   clearance, work authorization), stateless `JobMatchScorer.score(candidate, job)` → `MatchOutput`
+   (score, confidence, is_match, matched/missing/transferable skills, strengths, gaps, blockers,
+   recommendation/rejection reasons, full breakdown). Blocker semantics: missing required skills, hard
+   years gap, disclosed compensation below expectation, security clearance, and work authorization are
+   blockers; unknown candidate data never blocks. Determinism: no timestamps inside the breakdown.
+4. **Service + repository** — `JobMatchingService` (`evaluate`, `batch_evaluate`, `score_for_orchestrator`
+   for the future 24×7 layer, `get_for_job`, `list` with filters/sort); `repositories/job_match.py`
+   (`get_for_job`, idempotent `upsert`, `list_for_candidate`, `count_for_candidate`).
+   `repositories/skill.py` gained `list_for_candidate`.
+5. **Config + API** — `core/config.py` adds `match_rules_version` (default `3.0.0`), `match_weights`,
+   `match_threshold` (default `70.0`). `api/deps.py` gains `get_job_matching_service`; new router
+   `api/v1/matching.py` registered in `app/main.py`:
+   `POST|GET /api/v1/candidates/{candidate_id}/jobs/{job_id}/match`,
+   `POST /api/v1/candidates/{candidate_id}/matching/evaluate` (limit, recompute),
+   `GET /api/v1/candidates/{candidate_id}/matches`.
+6. **Tests** — `tests/unit/test_matching.py` (10 components, full-match high score, skill gaps +
+   rejection below threshold, clearance blocker, prompt-injection invariance, deterministic
+   reproducibility, remote preference, weights parse, years/salary parsing, required vs preferred
+   sections, canonical aliases, telecom extraction, synonym suggestions) and
+   `tests/integration/api/test_job_matching.py` (evaluate endpoint, idempotency, list filters/sort,
+   batch evaluate, 404 before evaluation).
+
+### Files Changed (WS-7)
+
+**New:** `src/backend/models/job_match.py`, `src/backend/schemas/matching.py`,
+`src/backend/repositories/job_match.py`, `src/backend/services/{matching,skills}.py`,
+`src/backend/api/v1/matching.py`, `migrations/versions/6b7f1d3c8a22_add_job_matching_foundation.py`,
+`tests/unit/test_matching.py`, `tests/integration/api/test_job_matching.py`.
+
+**Modified:** `src/backend/models/{__init__,candidate,job}.py` (job-match relationship),
+`src/backend/repositories/skill.py` (`list_for_candidate`), `src/backend/core/config.py`,
+`src/backend/api/deps.py`, `src/backend/app/main.py`, `README.md`, `ROADMAP.md`, `PROGRESS.md`.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **167 passed** (was 134 in WS-6) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 112 files |
+| Migration | `alembic upgrade head` / `downgrade 5e5f4c256726` | apply + downgrade OK on fresh DB |
+
+Notable fixes during WS-7: newline-preserving text normalization so section-aware skill parsing works
+(`normalize_text` collapsed newlines, breaking required/preferred detection); salary parsing required a
+currency/scale signal (avoided treating `5-8 years` as a salary); "Responsibility:"-style duty lines no
+longer harvested as required skills; gaps semantics now include blockers (missing skills surface in
+`gaps`), blockers are per-component; removed timestamp from breakdown for exact reproducibility;
+weights test asserts partial-override total (not forced to 100).
+
+### Commit Status / Next Step
+
+- WS-7 to be committed + pushed: `feat: implement job matching engine`; then `HEAD == origin/main`,
+  working tree clean.
+
+### Known Risks / Issues
+
+1. No vector/embedding semantic matcher yet (pluggable protocol exists; deterministic synonym default).
+2. No LLM involvement in scoring by design — deterministic and fully explainable (per requirements).
+3. Postgres-specific SQL not exercised (development DB is SQLite).
+
+---
+
 ## Next Workstream
 
-1. **Commit + push the PROGRESS.md checkpoint update** (current working tree).
-2. **Phase 3 — Applying** — not started, not approved.
+1. **Commit + push the WS-7 checkpoint** (current working tree).
+2. **Phase 5 — Resume & Application Preparation** — not started, not approved.
 
 ## Next Workstream Status
 
-- Approved: **YES for commit/push of WS-6** (Phase 2 completion checkpoint per plan).
-- Started: **NO** (Phase 3 not started until the checkpoint update is committed and verified).
+- Approved: **YES for commit/push of WS-7** (Phase 4 matching checkpoint per plan).
+- Started: **NO** (Phase 5 not started until the checkpoint is committed and verified).

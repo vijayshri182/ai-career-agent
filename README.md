@@ -6,6 +6,10 @@ A privacy-first, human-in-the-loop AI system that continuously discovers relevan
 > foundation, and the Phase 1 frontend (Next.js) are complete. **Phase 2 — Job Discovery** backend
 > foundation (source adapters, robots.txt compliance, normalization, deduplication, freshness,
 > scheduler, API routers, migration) is complete and exercised through integration tests.
+> **Phase 4 — AI Job Matching** backend (deterministic, explainable ten-component scoring engine,
+> untrusted job-text parsing, skills vocabulary + synonym matching, configurable weights/threshold,
+> idempotent `job_matches` persistence + migration, candidate-scoped APIs) is complete and exercised
+> through unit + integration tests.
 > No application automation, submission, or production integrations are implemented yet.
 
 ## Vision
@@ -161,6 +165,32 @@ npm start          # production server (expects HTTPS in real deployments)
 
 Quality gates: `npm run lint`, `npx tsc --noEmit`, `npm run build`. `API_BASE_URL`
 configures the backend origin for both the route handlers and the proxy.
+
+## AI Job Matching (Phase 4)
+
+A deterministic, explainable matching engine that scores a candidate against a job from
+0–100 using ten transparent components — skills, role alignment, seniority, years experience,
+domain, industry, leadership, location, work mode, and compensation:
+
+- **Job text is untrusted.** Parsing only tokenizes descriptions into skills, years, salary,
+  location and work-mode signals; a description can never alter rules, weights, thresholds, or
+  policies (prompt-injection invariant covered by tests).
+- **Configurable weights.** `MATCH_WEIGHTS` (default sums to 100), `MATCH_THRESHOLD`
+  (default `70.0`), `MATCH_RULES_VERSION` (default `3.0.0`).
+- **Exploreable output.** Every result carries matched/missing skills, strengths, gaps, blockers,
+  recommendation/rejection reasons, and a full component-weighted breakdown.
+- **Semantic matching protocol.** `SemanticSkillMatcher` is pluggable; the default is a
+  deterministic synonym matcher (a vector matcher may later broaden *related-skill credit* only).
+- **Idempotent persistence.** Results are upserted per candidate+job (`job_matches`) and can be
+  re-evaluated in batch; the orchestrator path (`score_for_orchestrator`) is backend-usable.
+
+Endpoints:
+
+```text
+POST|GET /api/v1/candidates/{candidate_id}/jobs/{job_id}/match
+POST     /api/v1/candidates/{candidate_id}/matching/evaluate?limit=&recompute=
+GET      /api/v1/candidates/{candidate_id}/matches?is_match=&status=&min_score=&sort=&limit=&offset=
+```
 
 ## 24×7 Operation
 

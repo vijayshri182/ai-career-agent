@@ -28,6 +28,7 @@ from backend.repositories.company import CompanyRepository
 from backend.repositories.education import EducationRepository
 from backend.repositories.experience import ExperienceRepository
 from backend.repositories.job import JobRepository
+from backend.repositories.job_match import JobMatchRepository
 from backend.repositories.job_source import JobSourceRepository
 from backend.repositories.raw_job_extraction import RawJobExtractionRepository
 from backend.repositories.resume import (
@@ -54,6 +55,7 @@ from backend.services.experience import ExperienceService
 from backend.services.human_in_loop import HumanInTheLoopService
 from backend.services.job import JobService
 from backend.services.job_source import JobSourceService
+from backend.services.matching import JobMatchingService, JobMatchScorer, ScoreWeights
 from backend.services.normalization import JobNormalizer
 from backend.services.profile import ProfileService
 from backend.services.resume import ResumeService
@@ -307,6 +309,25 @@ def make_discovery_service(
         client_factory=lambda: _make_client(settings),
         normalizer=JobNormalizer(),
         settings=settings,
+    )
+
+
+async def get_job_matching_service(
+    session: AsyncSession = Depends(get_session),
+) -> JobMatchingService:
+    settings = get_settings()
+    scorer = JobMatchScorer(
+        weights=ScoreWeights.from_weights_string(settings.match_weights),
+        threshold=settings.match_threshold,
+        rules_version=settings.match_rules_version,
+    )
+    return JobMatchingService(
+        candidate_repo=CandidateRepository(session),
+        job_repo=JobRepository(session),
+        match_repo=JobMatchRepository(session),
+        skill_repo=SkillRepository(session),
+        experience_repo=ExperienceRepository(session),
+        scorer=scorer,
     )
 
 
