@@ -15,6 +15,12 @@ from backend.db.engine import make_engine, make_session_factory
 from backend.models.candidate import Candidate
 from backend.models.user import User
 from backend.repositories.agent_task import AgentTaskRepository
+from backend.repositories.application import (
+    ApplicationAnswerRepository,
+    ApplicationDocumentRepository,
+    ApplicationQuestionRepository,
+    ApplicationRepository,
+)
 from backend.repositories.audit import AuditRepository
 from backend.repositories.authentication_provider import (
     AuthProviderRepository,
@@ -42,6 +48,7 @@ from backend.repositories.user import UserRepository
 from backend.repositories.workflow_run import WorkflowRunRepository
 from backend.services.adapters.base import JobSourceAdapter
 from backend.services.adapters.generic_http import GenericHttpAdapter
+from backend.services.application_prep import ApplicationPrepService
 from backend.services.auth import AuthService
 from backend.services.authentication import AuthenticationService
 from backend.services.authentication_provider import AuthProviderService
@@ -328,6 +335,27 @@ async def get_job_matching_service(
         skill_repo=SkillRepository(session),
         experience_repo=ExperienceRepository(session),
         scorer=scorer,
+    )
+
+
+async def get_application_prep_service(
+    session: AsyncSession = Depends(get_session),
+) -> ApplicationPrepService:
+    return ApplicationPrepService(
+        candidate_repo=CandidateRepository(session),
+        job_repo=JobRepository(session),
+        company_repo=CompanyRepository(session),
+        resume_repo=ResumeRepository(session),
+        skill_repo=SkillRepository(session),
+        experience_repo=ExperienceRepository(session),
+        education_repo=EducationRepository(session),
+        certification_repo=CertificationRepository(session),
+        match_repo=JobMatchRepository(session),
+        app_repo=ApplicationRepository(session),
+        question_repo=ApplicationQuestionRepository(session),
+        answer_repo=ApplicationAnswerRepository(session),
+        document_repo=ApplicationDocumentRepository(session),
+        audit_repo=AuditRepository(session),
     )
 
 

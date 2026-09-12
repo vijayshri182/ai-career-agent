@@ -236,6 +236,20 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * User can review and edit generated materials before submission.
 * **Dependencies:** Phase 4.
 * **Complexity:** L
+* **Status:** Backend foundation implemented. Deterministic, fact-grounded preparation: one
+  `Application` per (candidate, job) with best-resume selection (active-version + default + resume-type
+  alignment scoring), screening questions classified auto vs `requires_review`, and versioned generated
+  documents (cover letter, tailored resume, answers sheet) stored with encrypted content +
+  `fact_sources` JSON traceability. A structured `FactGroundingValidator` rejects generated content that
+  introduces invented companies, names, or qualifications, and the deterministic writer only echoes
+  matched skills present in the profile (raw match strengths that repeat untrusted job text are never
+  copied verbatim). Exposed under
+  `/api/v1/candidates/{candidate_id}/applications/jobs/{job_id}/prepare`,
+  `.../applications`, `.../applications/{application_id}`,
+  `.../applications/{id}/documents[/generate|/{document_id}]`,
+  `.../applications/{id}/questions/{question_id}/answer`, and `.../applications/{id}/status`.
+  `prepare` requires an existing match (400 otherwise); re-preparing an active application is
+  idempotent. PDF/export of the tailored resume and any LLM-backed drafting remain future increments.
 
 ---
 

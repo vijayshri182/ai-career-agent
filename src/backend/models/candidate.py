@@ -12,6 +12,7 @@ from backend.db.base import IdModel
 from backend.db.encrypted_types import EncryptedString
 
 if TYPE_CHECKING:
+    from backend.models.application import Application
     from backend.models.authentication import AuthProvider
     from backend.models.browser_session import BrowserSession
     from backend.models.challenge import Challenge
@@ -111,6 +112,7 @@ class Candidate(IdModel, table=True):
     jobs: list["Job"] = Relationship(back_populates="candidate")
     job_extractions: list["RawJobExtraction"] = Relationship(back_populates="candidate")
     job_matches: list["JobMatch"] = Relationship(back_populates="candidate")
+    applications: list["Application"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

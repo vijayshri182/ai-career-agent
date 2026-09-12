@@ -9,7 +9,10 @@ A privacy-first, human-in-the-loop AI system that continuously discovers relevan
 > **Phase 4 — AI Job Matching** backend (deterministic, explainable ten-component scoring engine,
 > untrusted job-text parsing, skills vocabulary + synonym matching, configurable weights/threshold,
 > idempotent `job_matches` persistence + migration, candidate-scoped APIs) is complete and exercised
-> through unit + integration tests.
+> through unit + integration tests. **Phase 5 — Resume & Application Preparation** backend foundation
+> (deterministic best-resume selection, fact-grounded screening questions + answers, versioned
+> encrypted documents: cover letter, tailored resume, answers sheet, with structured hallucination
+> validation and `fact_sources` traceability) is complete and exercised through unit + integration tests.
 > No application automation, submission, or production integrations are implemented yet.
 
 ## Vision
@@ -190,6 +193,42 @@ Endpoints:
 POST|GET /api/v1/candidates/{candidate_id}/jobs/{job_id}/match
 POST     /api/v1/candidates/{candidate_id}/matching/evaluate?limit=&recompute=
 GET      /api/v1/candidates/{candidate_id}/matches?is_match=&status=&min_score=&sort=&limit=&offset=
+```
+
+## Resume & Application Preparation (Phase 5)
+
+Deterministic, fact-grounded preparation of application materials for a (candidate, job) pair,
+built on top of a completed match:
+
+- **Preparation requires a match first.** `prepare` returns 400 unless the job has been evaluated,
+  so materials always build on the explainable match output.
+- **Never invents facts.** One `Application` per pair owns screening questions, answers, and
+  versioned documents (cover letter, tailored resume, answers sheet). Answers and documents are
+  assembled only from profile entities (skills, experiences, education, certifications, verified
+  compensation) plus the match result; every claim is recorded as `fact_sources` JSON so it can be
+  traced back to the profile. Questions that cannot be answered from profile data (motivation,
+  missing skills, clearance, relocation, unset compensation) are flagged `requires_review`.
+- **Structured hallucination guard.** `FactGroundingValidator` rejects any generated content that
+  introduces capitalized proper-noun-like tokens that are not known profile facts, framing words, or
+  known skills. The deterministic writer only echoes matched skills that appear in the profile —
+  raw match strengths that repeat untrusted job text (e.g. "Apache Kafka") are never copied
+  verbatim.
+- **Encrypted at rest.** Document content uses `EncryptedString`; each regeneration produces a new
+  per-type version number.
+- **Best-resume selection.** Active-version + default + resume-type alignment scoring picks the
+  resume for the application (or an explicit `resume_id` can be supplied).
+
+Endpoints:
+
+```text
+POST /api/v1/candidates/{candidate_id}/applications/jobs/{job_id}/prepare[?resume_id=]
+GET  /api/v1/candidates/{candidate_id}/applications?limit=&offset=
+GET  /api/v1/candidates/{candidate_id}/applications/{application_id}
+GET  /api/v1/candidates/{candidate_id}/applications/{application_id}/documents
+POST /api/v1/candidates/{candidate_id}/applications/{application_id}/documents/generate?doc_type=
+GET  /api/v1/candidates/{candidate_id}/applications/{application_id}/documents/{document_id}
+PUT  /api/v1/candidates/{candidate_id}/applications/{application_id}/questions/{question_id}/answer
+POST /api/v1/candidates/{candidate_id}/applications/{application_id}/status?status=
 ```
 
 ## 24×7 Operation

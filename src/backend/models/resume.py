@@ -11,6 +11,7 @@ from sqlmodel import Field, Relationship
 from backend.db.base import IdModel
 
 if TYPE_CHECKING:
+    from backend.models.application import Application
     from backend.models.candidate import Candidate
 
 
@@ -49,6 +50,7 @@ class Resume(IdModel, table=True):
     )
 
     candidate: "Candidate" = Relationship(back_populates="resumes")
+    applications: list["Application"] = Relationship(back_populates="resume")
     versions: list["ResumeVersion"] = Relationship(
         back_populates="resume",
         sa_relationship_kwargs={"foreign_keys": "ResumeVersion.resume_id"},

@@ -11,6 +11,7 @@ from sqlmodel import Field, Relationship, UniqueConstraint
 from backend.db.base import IdModel
 
 if TYPE_CHECKING:
+    from backend.models.application import Application
     from backend.models.candidate import Candidate
     from backend.models.company import Company
     from backend.models.job_match import JobMatch
@@ -70,6 +71,7 @@ class Job(IdModel, table=True):
     company: "Company" = Relationship(back_populates="jobs")
     source: "JobSource" = Relationship(back_populates="jobs")
     matches: list["JobMatch"] = Relationship(back_populates="job")
+    applications: list["Application"] = Relationship(back_populates="job")
     extractions: list["RawJobExtraction"] = Relationship(
         back_populates="job", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )

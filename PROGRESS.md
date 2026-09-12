@@ -27,6 +27,7 @@
 | WS-5 | Phase 1 — Next.js frontend (all profile/resume/connections UI, HttpOnly-cookie auth, `/api/v1` proxy) + backend integration fixes | Complete; committed + pushed | `fa0acd1` `feat: add phase 1 frontend` |
 | WS-6 | Phase 2 — Job Discovery (models, repos, services, adapters, API routers, scheduler, migration, tests) | Complete; committed + pushed | `ec9fee7` `feat: implement job discovery foundation` |
 | WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | `eb8abc4` `feat: implement job matching engine` |
+| WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | <pending commit> |
 
 ---
 
@@ -191,12 +192,107 @@ weights test asserts partial-override total (not forced to 100).
 
 ---
 
+## Current Workstream: WS-8 — Phase 5 Resume & Application Preparation (backend, first increment)
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 5 (Resume & Application Preparation,
+backend foundation — the plan refers to this as Phase 5; mission conversation labels it Phase 4).
+
+**Workstream:** Create one application per (candidate, job): deterministic best-resume selection,
+screening questions with fact-grounded answers, versioned generated documents (cover letter, tailored
+resume, answers sheet), encrypted document content, ownership-enforced APIs, Alembic migration.
+
+### What Was Implemented
+
+1. **Models + migration** — `models/application.py`: `Application`, `ApplicationQuestion`,
+   `ApplicationAnswer`, `ApplicationDocument` plus enums `ApplicationStatus` (draft/ready/submitted/
+   withdrawn), `QuestionCategory`, `AnswerStatus` (auto/requires_review/manual), `DocumentType`
+   (cover_letter/tailored_resume/answers_sheet/other). Tables `applications`,
+   `application_questions`, `application_answers` (unique per question), `application_documents`
+   (per-doc-type `version_number`; content stored with `EncryptedString`). Relationships
+   `applications` added to Candidate/Job/Resume. Hand-written migration `b2fe40980eea`
+   (`down_revision = 6b7f1d3c8a22`); enum columns are `sa.String(N)` matching the SQLModel
+   lowercased-values convention verified in prior phases; apply + full downgrade verified on a fresh
+   SQLite DB.
+2. **Deterministic writer** — `services/application_prep.py`: `ProfileFacts` (fact corpus = candidate,
+   skills, experiences, education, certifications + verified job title / company name — job body is
+   **untrusted**), `FactGroundingValidator` (capitalized-token claim check; flags invented companies/
+   skills/qualifications; framing vocabulary for prose + question stems), `ApplicationWriter` ABC +
+   `DeterministicApplicationWriter`. Answers/documents are assembled only from profile entities so
+   nothing invents facts; questions never answerable from profile (motivation, missing skills,
+   compensation when unset, clearance, relocation) default to `requires_review`. `GENERATION_RULES_VERSION
+   = "1.0.0"` stamped on generated documents. Cover-letter / skills-answer narrative only echoes
+   matched skills that appear in the candidate profile (raw match strengths may repeat untrusted job
+   text like "Apache Kafka" and are therefore never copied verbatim into generated content).
+3. **Service + repositories** — `ApplicationPrepService` (`prepare` requires an existing match —
+   `ValidationError`/400 otherwise; returns existing non-withdrawn application idempotently),
+   `generate_document` (per-doc-type versioning + `fact_sources` JSON), `update_answer` (forces
+   `MANUAL`), `update_status`, candidate-scoped detail/list. Repos in `repositories/application.py`
+   (`BaseRepository` CRUD, `get_detailed` with selectinload for questions→answer + documents, per-type
+   `next_version_number`).
+4. **Config + API** — `api/deps.py` gains `get_application_prep_service`; router `api/v1/applications.py`
+   registered under `/api/v1`:
+   `POST /api/v1/candidates/{candidate_id}/applications/jobs/{job_id}/prepare`,
+   `GET .../applications`, `GET .../applications/{application_id}`
+   (detail with questions/answers/documents), `GET .../applications/{id}/documents`,
+   `POST .../applications/{id}/documents/generate?doc_type=...`, `GET .../documents/{document_id}`,
+   `PUT .../applications/{id}/questions/{question_id}/answer`,
+   `POST .../applications/{id}/status?status=...`. All routes depend on `get_owned_candidate`
+   (404 for cross-user/non-existent) + `handle_domain_error` mapping.
+5. **Tests** — `tests/unit/test_application_prep_writer.py` (13): fact-grounded question generation,
+   auto vs requires-review classification, compensation-missing → review, missing-skill questions,
+   all three documents pass the grounding validator, invented capitalized company flagged, known skill
+   not in profile flagged, framing prose passes, resume-type scoring, fact sources traceable, resume
+   selection, no-match guard. `tests/integration/api/test_application_prep.py` (7): prepare requires
+   existing match (400), prepare creates application + ≥4 questions + 3 versioned documents with
+   `generation_version` and `fact_sources`, idempotent prepare, generate creates new version per
+   doc type, update_answer → manual, status flow, cross-candidate 404/empty.
+
+### Files Changed (WS-8)
+
+**New:** `src/backend/models/application.py`, `src/backend/schemas/application.py`,
+`src/backend/repositories/application.py`, `src/backend/services/application_prep.py`,
+`src/backend/api/v1/applications.py`,
+`migrations/versions/b2fe40980eea_add_application_preparation_foundation.py`,
+`tests/unit/test_application_prep_writer.py`, `tests/integration/api/test_application_prep.py`.
+
+**Modified:** `src/backend/models/{__init__,candidate,job,resume}.py` (application relationship),
+`src/backend/api/deps.py`, `src/backend/app/main.py`, `README.md`, `ROADMAP.md`, `PROGRESS.md`.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **187 passed** (was 167 in WS-7) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 117 files |
+| Migration | `alembic upgrade head` / `downgrade base` / `upgrade head` | apply + full downgrade + re-apply OK on fresh DB |
+
+Notable fixes during WS-8: `"Resume | None"`-style string relationship annotations broke SQLAlchemy
+mapper resolution (switched to `Optional["Resume"]`); `ApplicationDocument.content` widened to
+`EncryptedString(65535)` so resumes fit; the answers-sheet grounding check validates only auto-answer
+lines (question stems echo untrusted job text and "requires manual input" is not a claim); cover-letter
+and skills-answer narrative grounded to profile skills only (no verbatim match strengths).
+
+### Commit Status / Next Step
+
+- WS-8 awaiting commit (see Next Workstream).
+
+### Known Risks / Issues
+
+1. PDF generation for tailored resume is deferred (content is stored as encrypted text; PDF/export is a
+   later increment).
+2. LLM-backed cover-letter drafting is intentionally not implemented — deterministic writer only, per
+   the fact-grounding mandate.
+3. Postgres-specific SQL not exercised (development DB is SQLite).
+
+---
+
 ## Next Workstream
 
-1. **Commit + push the WS-7 checkpoint** (current working tree).
-2. **Phase 5 — Resume & Application Preparation** — not started, not approved.
+1. **Commit + push the WS-8 checkpoint** (current working tree).
+2. **Phase 6 — Human Approval Workflow** — not started, not approved.
 
 ## Next Workstream Status
 
-- Approved: **YES for commit/push of WS-7** (Phase 4 matching checkpoint per plan).
-- Started: **NO** (Phase 5 not started until the checkpoint is committed and verified).
+- Approved: **YES for commit/push of WS-8** (Phase 5 application preparation checkpoint per plan).
+- Started: **NO** (Phase 6 not started until the checkpoint is committed and verified).

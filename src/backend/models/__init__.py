@@ -1,6 +1,16 @@
 """Database models package."""
 
 from backend.models.agent_task import AgentTask, AgentTaskStatus
+from backend.models.application import (
+    AnswerStatus,
+    Application,
+    ApplicationAnswer,
+    ApplicationDocument,
+    ApplicationQuestion,
+    ApplicationStatus,
+    DocumentType,
+    QuestionCategory,
+)
 from backend.models.audit import AuditEvent
 from backend.models.authentication import (
     AuthenticationMethod,
@@ -45,6 +55,12 @@ from backend.models.workflow_run import WorkflowRun, WorkflowStatus
 __all__ = [
     "AgentTask",
     "AgentTaskStatus",
+    "AnswerStatus",
+    "Application",
+    "ApplicationAnswer",
+    "ApplicationDocument",
+    "ApplicationQuestion",
+    "ApplicationStatus",
     "AuditEvent",
     "AuthProvider",
     "AuthProviderState",
@@ -63,6 +79,7 @@ __all__ = [
     "ChallengeType",
     "Company",
     "CompanyVerificationStatus",
+    "DocumentType",
     "Education",
     "Experience",
     "Job",
@@ -74,6 +91,7 @@ __all__ = [
     "ParsedResume",
     "Proficiency",
     "ProfileStatus",
+    "QuestionCategory",
     "RawExtractionStatus",
     "RawJobExtraction",
     "Resume",
