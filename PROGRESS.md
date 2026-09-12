@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `89da2fc` (`feat: implement permitted application automation`) |
+| HEAD SHA | `970f449` (`feat: implement recruiter contact discovery`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -30,6 +30,7 @@
 | WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | `3fe9e79` `feat: implement application preparation foundation` |
 | WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | `cc3f570` `feat: implement human approval workflow` |
 | WS-10 | Phase 5/7 — Permitted Application Automation (automation runs, policy gates, challenge handoff, retries, API) | Complete; committed + pushed | `89da2fc` `feat: implement permitted application automation` |
+| WS-11 | Phase 8 — Recruiter Contact Discovery (contact sources + contacts, confidence scoring, privacy-safe discovery service, APIs, migration, tests) | Complete; committed + pushed | `970f449` `feat: implement recruiter contact discovery` |
 
 ---
 
@@ -436,13 +437,97 @@ messages use `{run.status}` not `.value`; `list_runs` total now respects the sta
 
 ---
 
+## Current Workstream: WS-11 — Phase 8 Recruiter Contact Discovery (backend)
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 8 (Recruiter Contact Discovery,
+backend). Builds on job discovery (WS-6), job matching (WS-7), application prep (WS-8), approvals
+(WS-9) and automation (WS-10).
+
+### What Was Implemented
+
+1. **Models + migration** — `models/recruiter_contact.py`: `ContactSource` (`contact_sources` — the
+   public evidence page behind a discovery pass; source_type career_page/team_page/directory/
+   professional_network/other_public, discovered_at) and `RecruiterContact` (`recruiter_contacts` —
+   candidate-scoped, company-scoped record: full_name, role_title, public_profile_url (the evidence
+   link), email (only ever a publicly listed, source-exposed address — **guessed emails are never
+   stored**), confidence_score 0–100, contact_type verified/guessed, is_suppressed, verification_details
+   JSON). Unique `(candidate_id, public_profile_url)` dedup key. Relationships wired on
+   Candidate/Company/Job (+ContactSource). Migration `d5e6f7a8b9c2` (`down_revision = d4e5f6a7b8c1`);
+   apply + full downgrade + re-apply verified on fresh SQLite.
+2. **Confidence scorer** — `services/recruiter_confidence.py` (`AffiliationConfidenceScorer`,
+   `is_recruiting_role` keyword matching): deterministic, explainable scoring
+   (company-domain evidence +45, plainly recruiting role +20, linked public profile +20, name/role/
+   evidence all present +10, publicly-listed email bonus +5, clamped 0–100). VERIFIED requires
+   on-company-domain evidence AND a plainly recruiting role; `surfaced = score >= 70 AND VERIFIED`.
+   Domain mismatch or missing domain never earns verified credit (privacy-first affiliation check).
+3. **Directory adapter** — `services/recruiter_directory.py`: `DirectoryPerson` (with
+   `email_publicly_listed` flag — may only be True when the public source explicitly exposed the
+   address), `RecruiterDirectoryFetcher` protocol + `EmptyDirectoryFetcher` default + `make_directory_fetcher`. Discovery is network-free until a real public-directory adapter is plugged in (WS-6 adapter pattern).
+4. **Service + repos** — `services/recruiter_discovery.py` (`RecruiterDiscoveryService`):
+   `discover_for_job(job_id)` fetches, scores, dedupes by profile URL, persists ContactSource + contact,
+   suppresses anything not surfaced (stored but never listed/emailed), and audits
+   (`recruiter_contact.evaluated` per person incl. `email_guessed_blocked`, `recruiter_contacts.discovered`
+   summary). `list_contacts(company_id/job_id/limit/offset)` returns only VERIFIED + unsuppressed
+   contacts; `get_contact` candidate-scoped; ownership re-checked via `get_for_user_or_404`
+   (defense-in-depth, 404 for cross-candidate). Repos in `repositories/recruiter_contact.py`
+   (`RecruiterContactRepository` + `ContactSourceRepository`).
+5. **API** — `api/v1/recruiter_contacts.py` under `/candidates/{candidate_id}`:
+   `POST .../jobs/{job_id}/discover-contacts` (summary found/created/existing_skipped/hidden +
+   evaluated contacts) and `GET .../recruiter-contacts` (surfaced only, filters/pagination);
+   `get_recruiter_discovery_service` in `api/deps.py` (default empty fetcher), router in `app/main.py`.
+6. **Tests** — `tests/unit/test_recruiter_confidence.py` (9): keyword matching, verified-on-domain
+   surfaced, exact-70 boundary surfaced, below-threshold never surfaced, domain required for verified,
+   recruiting-role required even on domain, clamp to 100, email-bonus boundary, unverifiable reasons.
+   `tests/unit/test_recruiter_discovery.py` (7): empty run finds nothing, verified surfaced + guesses
+   hidden, guessed email never stored (vs publicly-listed stored), dedupe on re-run, cross-candidate
+   404 (discover/list/get), unknown job 404.
+   `tests/integration/api/test_recruiter_contacts.py` (4): discover surfaces only verified, guessed
+   email never returned, candidate scoping 404, unknown job discovery 404.
+
+### Files Changed (WS-11)
+
+**New:** `src/backend/models/recruiter_contact.py`, `src/backend/repositories/recruiter_contact.py`,
+`src/backend/services/recruiter_confidence.py`, `src/backend/services/recruiter_directory.py`,
+`src/backend/services/recruiter_discovery.py`, `src/backend/schemas/recruiter_contact.py`,
+`src/backend/api/v1/recruiter_contacts.py`,
+`migrations/versions/d5e6f7a8b9c2_add_recruiter_contact_foundation.py`,
+`tests/unit/test_recruiter_confidence.py`, `tests/unit/test_recruiter_discovery.py`,
+`tests/integration/api/test_recruiter_contacts.py`.
+
+**Modified:** `src/backend/models/__init__.py` (exports), `src/backend/models/{candidate,company,job}.py`
+(relationships), `src/backend/api/deps.py` (`get_recruiter_discovery_service`),
+`src/backend/app/main.py` (router), `PROGRESS.md`.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **236 passed** (was 217 in WS-10) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 135 files |
+| Migration | `alembic upgrade head` / `downgrade base` / `upgrade head` | apply + full downgrade + re-apply OK on fresh DB |
+
+Notable fixes during WS-11: `Relationship` optional annotations must use `Optional["X"]` (the
+`"X" | None` form raises TypeError at class-body evaluation); `_build_persisted_contact` is async
+(missing `await` crashed the loop); `_on_company_domain` requires an explicitly matching claimed domain
+(missing/unrelated domains earn no verified credit), so a stranger candidate's `list_contacts` raises
+NotFoundError rather than returning empty (consistent privacy behaviour).
+
+### Commit Status / Next Step
+
+- WS-11 committed + pushed: `970f449` `feat: implement recruiter contact discovery`; `HEAD == origin/main`,
+  working tree clean.
+- Next: **WS-12 — Phase 9 Outreach Engine**.
+
+---
+
 ## Next Workstream
 
-1. **WS-11 — Phase 8 Recruiter Contact Discovery** — pending.
-2. Then: Phase 9 Outreach Engine, Phase 12 Learning & Analytics, Phase 10 Notifications/Dashboard,
-   Phase 11 24×7 Orchestration, Phase 13 Production Hardening, frontend dashboard completion, final QA.
+1. **WS-12 — Phase 9 Outreach Engine** — pending.
+2. Then: Phase 12 Learning & Analytics, Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration,
+   Phase 13 Production Hardening, frontend dashboard completion, final QA.
 
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** — WS-10 checkpoint committed (`89da2fc`) and verified; WS-11 begins next.
+- Started: **NO** — WS-11 checkpoint committed (`970f449`) and verified; WS-12 begins next.
