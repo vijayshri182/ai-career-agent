@@ -9,7 +9,7 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `cc3f570` (`feat: implement human approval workflow`) |
+| HEAD SHA | `89da2fc` (`feat: implement permitted application automation`) |
 | HEAD == origin/main | **Yes** |
 | Upstream | `main` tracks `origin/main`, even |
 
@@ -29,12 +29,7 @@
 | WS-7 | Phase 4 — AI Job Matching (deterministic scoring engine, job-text parsing, skills vocabulary/synonym matcher, persistence + migration, APIs, tests) | Complete; committed + pushed | `eb8abc4` `feat: implement job matching engine` |
 | WS-8 | Phase 5 — Resume & Application Preparation (info: backend foundation) | Complete; committed + pushed | `3fe9e79` `feat: implement application preparation foundation` |
 | WS-9 | Phase 6 — Human Approval Workflow (approvals + append-only decisions, candidate-scoped API, tests) | Complete; committed + pushed | `cc3f570` `feat: implement human approval workflow` |
-
-## Current Workstream: WS-10 — Phase 5 Permitted Application Automation
-
-**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 5 completion: application
-automation runtime. Builds on the approved application-preparation (WS-8) and human-approval
-(WS-9) foundations.
+| WS-10 | Phase 5/7 — Permitted Application Automation (automation runs, policy gates, challenge handoff, retries, API) | Complete; committed + pushed | `89da2fc` `feat: implement permitted application automation` |
 
 ---
 
@@ -354,14 +349,100 @@ APIs, state-machine service, audit mirroring, and tests.
 
 ---
 
+## Current Workstream: WS-10 — Phase 7 Permitted Application Automation (backend)
+
+**Project / Phase:** AI Career Agent (ai-career-agent) — Phase 7 completion: application automation
+runtime. Builds on application preparation (WS-8) and the human approval workflow (WS-9).
+
+### What Was Implemented
+
+1. **Models + migration** — `models/automation_run.py`: `AutomationRun` + `AutomationRunStatus`
+   (pending/running/submitted/paused_human_action/failed/cancelled) with a partial unique index
+   `uq_automation_runs_open_app` on `application_id` (one non-terminal run per application — no double
+   submission). Soft references (provider_id, challenge_id, workflow_id) never hold secrets. Migration
+   `d4e5f6a7b8c1` (`down_revision = c3a0912b7d01`); apply + full downgrade + re-apply verified on fresh
+   SQLite. `candidate.py`/`application.py` gained `automation_runs` relationships; exports added to
+   `models/__init__.py`.
+2. **Adapters** — `services/automation_adapter.py`: `ApplicationSubmitter` protocol +
+   `SubmitOutcome`/`SubmissionPayload`; `RecordingSubmitter` (default, injectable) records a submission
+   for a source with explicit permission — no network/browser automation. Real ATS adapters plug in
+   behind the protocol and must keep the policy gates in the service.
+3. **Service** — `services/application_automation.py` (`ApplicationAutomationService`): execution is
+   gated on (a) candidate ownership (defense-in-depth re-check), (b) `automation_enabled` +
+   `autonomy_level >= 2`, (c) `JobSource.terms_allow_automation` + enabled source, (d) an APPROVED
+   approval for exactly this application (`get_approved_for_target`; still-pending blocks with a clear
+   error), (e) no active run and no retry-pending failed run. Challenge outcomes (CAPTCHA/MFA/bot
+   protection) pause the run (`paused_human_action`), auto-create an `AuthProvider` via
+   `AuthProviderService.get_or_create_for_site` ("ATS automation: {company}") and hand off to
+   `ChallengeService.ensure_open` (workflow created + paused once; challenge marked
+   `human_action_required` without re-pausing). Retry is allowed for `paused_human_action` and
+   retry-pending `failed` runs, blocked while the linked challenge is still in-flight
+   (open/acknowledged/human_action_required), capped by `max_attempts` with exponential backoff
+   (`next_retry_at = now + retry_base_seconds * 2**attempts`). Every transition is mirrored to
+   `audit_events` (`automation.run_started`, `automation.run_submitted`,
+   `automation.challenge_detected`, `automation.run_failed`, `application.submitted`, ...) and a
+   successful submission flips the application to `submitted`.
+4. **Config + API** — settings `automation_enabled`/`automation_max_attempts`/
+   `automation_retry_base_seconds`. Router `api/v1/automation.py` under `/candidates/{candidate_id}`:
+   `POST .../applications/{application_id}/execute`, `GET .../automation/runs` (status filter +
+   pagination), `GET .../automation/runs/{run_id}`, `POST .../automation/runs/{run_id}/retry`,
+   `GET .../automation/status`. Deps gained `get_application_automation_service`; router wired in
+   `app/main.py`.
+5. **Tests** — `tests/unit/test_automation_service.py` (14): approval required, blocked-while-pending,
+   source-permission required, autonomy gate, happy-path submit (run + application status), cannot
+   re-execute submitted application, challenge handoff pauses run, challenge-in-flight blocks retry,
+   retry-after-resolve submits, retryable failure schedules backoff, attempt-budget exhaustion, failed
+   retry-pending blocks new execute, cross-candidate 404, filtered list/summary.
+   `tests/integration/api/test_application_automation.py` (3): execute requires approval then submits +
+   status/list/detail/retry guards, challenge handoff via dependency override
+   (`get_application_automation_service`), candidate-scoped 404.
+
+### Files Changed (WS-10)
+
+**New:** `src/backend/models/automation_run.py`, `src/backend/repositories/automation_run.py`,
+`src/backend/services/automation_adapter.py`, `src/backend/services/application_automation.py`,
+`src/backend/schemas/automation.py`, `src/backend/api/v1/automation.py`,
+`migrations/versions/d4e5f6a7b8c1_add_application_automation_foundation.py`,
+`tests/unit/test_automation_service.py`, `tests/integration/api/test_application_automation.py`.
+
+**Modified:** `src/backend/models/__init__.py` (exports), `src/backend/models/candidate.py` +
+`src/backend/models/application.py` (`automation_runs` relationships), `src/backend/core/config.py`
+(automation settings), `src/backend/repositories/approval.py` (`get_approved_for_target`),
+`src/backend/services/authentication_provider.py` (`get_or_create_for_site`), `src/backend/api/deps.py`
+(`get_application_automation_service` + `AutomationRunRepository` import), `src/backend/app/main.py`
+(router), `PROGRESS.md`.
+
+### Tests Executed & Exact Results
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Backend tests | `.venv\Scripts\python.exe -m pytest` | **217 passed** (was 200 in WS-9) |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check src/backend tests` | All checks passed |
+| Backend types | `.venv\Scripts\python.exe -m mypy src/backend` | Success: no issues in 128 files |
+| Migration | `alembic upgrade head` / `downgrade base` / `upgrade head` | apply + full downgrade + re-apply OK on fresh DB |
+
+Notable bugs fixed during WS-10: double-pausing the workflow in challenge handoff (`escalate` re-paused
+an already-paused workflow → removed, challenge set to `human_action_required` directly); `retry` must
+allow `paused_human_action` as a *source* (only pending/running/cancelled are blocked outright) and
+must gate on the linked challenge being resolved; status columns load as `str` from `String(24)` so
+messages use `{run.status}` not `.value`; `list_runs` total now respects the status filter
+(`count_for_candidate` gained an optional status arg).
+
+### Commit Status / Next Step
+
+- WS-10 committed + pushed: `89da2fc` `feat: implement permitted application automation`; `HEAD ==
+  origin/main`, working tree clean.
+- Next: **WS-11 — Phase 8 Recruiter Contact Discovery**.
+
+---
+
 ## Next Workstream
 
-1. **WS-10 — Phase 5 (ROADMAP Phase 7) Permitted Application Automation** — pending.
-2. Then: Phase 8 Recruiter Contact Discovery, Phase 9 Outreach Engine, Phase 12 Learning & Analytics,
-   Phase 10 Notifications/Dashboard, Phase 11 24×7 Orchestration, Phase 13 Production Hardening,
-   frontend dashboard completion, final QA.
+1. **WS-11 — Phase 8 Recruiter Contact Discovery** — pending.
+2. Then: Phase 9 Outreach Engine, Phase 12 Learning & Analytics, Phase 10 Notifications/Dashboard,
+   Phase 11 24×7 Orchestration, Phase 13 Production Hardening, frontend dashboard completion, final QA.
 
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** — WS-9 checkpoint committed (`cc3f570`) and verified; WS-10 begins next.
+- Started: **NO** — WS-10 checkpoint committed (`89da2fc`) and verified; WS-11 begins next.
