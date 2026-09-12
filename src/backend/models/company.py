@@ -10,6 +10,7 @@ from backend.db.base import IdModel
 
 if TYPE_CHECKING:
     from backend.models.job import Job
+    from backend.models.recruiter_contact import ContactSource, RecruiterContact
 
 
 class CompanyVerificationStatus(str, Enum):
@@ -47,3 +48,5 @@ class Company(IdModel, table=True):
     )
 
     jobs: list["Job"] = Relationship(back_populates="company")
+    recruiter_contacts: list["RecruiterContact"] = Relationship(back_populates="company")
+    contact_sources: list["ContactSource"] = Relationship(back_populates="company")

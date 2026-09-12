@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from backend.models.job_match import JobMatch
     from backend.models.job_source import JobSource
     from backend.models.raw_job_extraction import RawJobExtraction
+    from backend.models.recruiter_contact import ContactSource, RecruiterContact
     from backend.models.resume import Resume
     from backend.models.secret_reference import SecretReference
     from backend.models.user import User
@@ -117,6 +118,8 @@ class Candidate(IdModel, table=True):
     applications: list["Application"] = Relationship(back_populates="candidate")
     approvals: list["Approval"] = Relationship(back_populates="candidate")
     automation_runs: list["AutomationRun"] = Relationship(back_populates="candidate")
+    recruiter_contacts: list["RecruiterContact"] = Relationship(back_populates="candidate")
+    contact_sources: list["ContactSource"] = Relationship(back_populates="candidate")
 
 
 class SkillCategory(str, Enum):

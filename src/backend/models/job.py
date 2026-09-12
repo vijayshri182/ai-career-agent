@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from backend.models.job_match import JobMatch
     from backend.models.job_source import JobSource
     from backend.models.raw_job_extraction import RawJobExtraction
+    from backend.models.recruiter_contact import RecruiterContact
 
 
 class JobStatus(str, Enum):
@@ -75,3 +76,4 @@ class Job(IdModel, table=True):
     extractions: list["RawJobExtraction"] = Relationship(
         back_populates="job", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
+    recruiter_contacts: list["RecruiterContact"] = Relationship(back_populates="job")

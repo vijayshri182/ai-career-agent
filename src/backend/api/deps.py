@@ -39,6 +39,10 @@ from backend.repositories.job import JobRepository
 from backend.repositories.job_match import JobMatchRepository
 from backend.repositories.job_source import JobSourceRepository
 from backend.repositories.raw_job_extraction import RawJobExtractionRepository
+from backend.repositories.recruiter_contact import (
+    ContactSourceRepository,
+    RecruiterContactRepository,
+)
 from backend.repositories.resume import (
     ParsedResumeRepository,
     ResumeRepository,
@@ -69,6 +73,8 @@ from backend.services.job_source import JobSourceService
 from backend.services.matching import JobMatchingService, JobMatchScorer, ScoreWeights
 from backend.services.normalization import JobNormalizer
 from backend.services.profile import ProfileService
+from backend.services.recruiter_directory import make_directory_fetcher
+from backend.services.recruiter_discovery import RecruiterDiscoveryService
 from backend.services.resume import ResumeService
 from backend.services.secrets import LocalSecretsProvider, SecretReferenceService
 from backend.services.skill import SkillService
@@ -435,6 +441,33 @@ async def get_approval_service(
         actor_id=candidate.user_id,
         candidate_id=candidate.id,
         autonomy_level=settings.autonomy_level,
+    )
+
+
+async def get_recruiter_discovery_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> RecruiterDiscoveryService:
+    """Candidate-scoped recruiter-contact discovery service.
+
+    Ownership is enforced via `get_owned_candidate` (404 for cross-user or
+    non-existent candidates); the service re-checks ownership as
+    defense-in-depth. Discovery only touches public evidence: the directory
+    fetcher is the injected public-source adapter (default: empty, so a run is
+    network-free until a real public-directory adapter is provided).
+    """
+    actor_id = candidate.user_id
+    return RecruiterDiscoveryService(
+        candidate_repo=CandidateRepository(session),
+        job_repo=JobRepository(session),
+        company_repo=CompanyRepository(session),
+        contact_repo=RecruiterContactRepository(session),
+        source_repo=ContactSourceRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=actor_id,
+        candidate_id=candidate.id,
+        directory_fetcher=make_directory_fetcher(),
     )
 
 

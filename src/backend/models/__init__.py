@@ -51,6 +51,12 @@ from backend.models.job import Job, JobStatus
 from backend.models.job_match import JobMatch, JobMatchStatus
 from backend.models.job_source import JobSource, JobSourceType
 from backend.models.raw_job_extraction import RawExtractionStatus, RawJobExtraction
+from backend.models.recruiter_contact import (
+    ContactSource,
+    ContactSourceType,
+    ContactType,
+    RecruiterContact,
+)
 from backend.models.resume import ParsedResume, Resume, ResumeStatus, ResumeType, ResumeVersion
 from backend.models.secret_reference import (
     SecretReference,
@@ -94,6 +100,9 @@ __all__ = [
     "ChallengeType",
     "Company",
     "CompanyVerificationStatus",
+    "ContactSource",
+    "ContactSourceType",
+    "ContactType",
     "DocumentType",
     "Education",
     "Experience",
@@ -109,6 +118,7 @@ __all__ = [
     "QuestionCategory",
     "RawExtractionStatus",
     "RawJobExtraction",
+    "RecruiterContact",
     "Resume",
     "ResumeStatus",
     "ResumeType",
