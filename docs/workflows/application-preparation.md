@@ -40,6 +40,9 @@ flowchart TB
 * Generated resume cannot contain experience not in `Experience` or `CandidateSkill`.
 * Cover letter must reference actual job and candidate capabilities.
 * Answers must be derived from profile facts; uncertain questions flagged for human input.
+* LinkedIn final submission is **human-executed** (ADR-010): the agent prepares the
+  package and requests approval; the user opens the job on LinkedIn and performs the
+  final Apply/Submit. No LinkedIn application automation.
 
 ## Versioning
 

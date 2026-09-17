@@ -44,3 +44,9 @@ sequenceDiagram
 ## Approval
 
 Outreach defaults to human approval. Level 3 autonomy may send pre-approved templates only on verified contacts.
+
+## LinkedIn Boundary
+
+LinkedIn messages and connection requests are **user-sent** (ADR-010): the system
+drafts the message and requires approval, but the user manually sends it on LinkedIn.
+No automated LinkedIn messaging or connection requests.

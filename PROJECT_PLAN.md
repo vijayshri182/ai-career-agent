@@ -97,6 +97,13 @@ Concrete MVP capabilities:
 * Must not fabricate experience, skills, or qualifications.
 * Must not guess or use unverified private contact information.
 * Must not store plaintext passwords or secrets.
+* **LinkedIn integration scope (feasibility-finding):** LinkedIn job postings enter the
+  system only through read-only Gmail ingestion of LinkedIn Job Alert emails (feasibility
+  GATE 1 — PASS), and final LinkedIn application submission and LinkedIn networking
+  messages are **human-executed** (the system prepares and approves, never automates
+  LinkedIn — GATE 2 FAIL / GATE 3 excluded). No LinkedIn browser automation, people
+  search, messaging, or application automation is in scope. See
+  [`docs/adr/adr-010-linkedin-gmail-integration-boundaries.md`](docs/adr/adr-010-linkedin-gmail-integration-boundaries.md).
 
 ### Non-Goals
 

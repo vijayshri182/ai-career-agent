@@ -638,6 +638,17 @@ UUID objects; `total` counts must honor the outcome/status/kind filters.
 
 - WS-13 committed + pushed; `HEAD == origin/main`, working tree clean.
 - Next: **WS-14 — Phase 10 Notifications/Dashboard**.
+- **Feasibility checkpoint (docs-only, preceding WS-14):** LinkedIn/Gmail feasibility
+  findings integrated into documentation. GATE 1 (Gmail → LinkedIn Job Alerts, read-only)
+  **PASS** — proven by the standalone `linkedin-gmail-poc` (20 alerts → 110 listings → 52
+  canonical URLs; sparse metadata). GATE 2 (LinkedIn people/relationship automation)
+  **FAIL** for this application. GATE 3 (direct LinkedIn application automation)
+  **EXCLUDED**; final LinkedIn submission and LinkedIn networking messages are
+  **human-executed** after approval. Recorded in
+  [`docs/adr/adr-010-linkedin-gmail-integration-boundaries.md`](docs/adr/adr-010-linkedin-gmail-integration-boundaries.md)
+  (+ ADR index, `PROJECT_PLAN.md` constraints, and the job-discovery / application-preparation
+  / recruiter-discovery / outreach workflow docs). No code changes; no LinkedIn browser
+  automation added.
 
 ---
 
