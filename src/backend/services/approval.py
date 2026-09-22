@@ -6,6 +6,7 @@ is candidate-scoped: it guarantees the acting user owns the candidate and only
 mutates approvals belonging to that candidate.
 """
 
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -17,6 +18,7 @@ from backend.models.approval import (
     ApprovalKind,
     ApprovalStatus,
 )
+from backend.models.notification import NotificationCategory
 from backend.repositories.approval import ApprovalDecisionRepository, ApprovalRepository
 from backend.repositories.audit import AuditRepository
 from backend.repositories.candidate import CandidateRepository
@@ -35,6 +37,7 @@ class ApprovalService:
         actor_id: UUID,
         candidate_id: UUID,
         autonomy_level: int = 2,
+        notifier: Callable[..., Awaitable[None]] | None = None,
     ) -> None:
         self._approvals = approval_repo
         self._decisions = decision_repo
@@ -43,6 +46,7 @@ class ApprovalService:
         self._actor_id = actor_id
         self._candidate_id = candidate_id
         self._autonomy_level = autonomy_level
+        self._notifier = notifier
 
     async def _ensure_owned_candidate(self) -> None:
         await self._candidates.get_for_user_or_404(self._candidate_id, self._actor_id)
@@ -87,6 +91,14 @@ class ApprovalService:
             entity_id=approval.id,
             metadata={"kind": kind.value, "target_type": target_type, "target_id": str(target_id)},
         )
+        if self._notifier is not None:
+            await self._notifier(
+                category=NotificationCategory.APPROVAL_NEEDED,
+                title="Approval required",
+                detail=f"{summary or kind.value} needs your decision.",
+                entity_type="approval",
+                entity_id=approval.id,
+            )
         return approval
 
     async def list_approvals(
