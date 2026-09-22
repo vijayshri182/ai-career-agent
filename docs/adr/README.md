@@ -5,10 +5,10 @@ This directory records major architecture and technology decisions for the AI Ca
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-001](adr-001-python-fastapi-backend.md) | Python + FastAPI for the backend | Proposed |
-| [ADR-002](adr-002-postgresql-pgvector.md) | PostgreSQL + pgvector for primary data | Proposed |
+| [ADR-002](adr-002-postgresql-pgvector.md) | PostgreSQL for primary data (pgvector deferred) | Accepted (PostgreSQL) |
 | [ADR-003](adr-003-redis-celery-queue.md) | Redis + Celery for queue and scheduling | Proposed |
 | [ADR-004](adr-004-playwright-browser.md) | Playwright for browser automation | Proposed |
-| [ADR-005](adr-005-langchain-llm-abstraction.md) | LangChain / LangGraph for LLM abstraction | Proposed |
+| [ADR-005](adr-005-langchain-llm-abstraction.md) | LangChain / LangGraph for LLM abstraction | Deferred (not implemented) |
 | [ADR-006](adr-006-oauth-oidc-authentication.md) | OAuth2 / OIDC for authentication | Proposed |
 | [ADR-007](adr-007-nextjs-frontend.md) | Next.js for the frontend | Accepted |
 | [ADR-008](adr-008-agent-orchestrator.md) | Agent orchestrator + event-driven workflows | Proposed |

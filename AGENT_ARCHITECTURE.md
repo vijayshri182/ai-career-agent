@@ -211,9 +211,13 @@ sequenceDiagram
 | Long-term | PostgreSQL | Persistent candidate profile, jobs, applications. | Candidate skills. |
 | Working | Redis | Short-term task context and caches. | LLM match cache. |
 | Ephemeral | In-process | Per-run agent scratchpad. | Parsed job tokens. |
-| RAG | pgvector | Semantic retrieval across job descriptions and profile. | Similar past applications. |
+| RAG | pgvector (deferred) | Semantic retrieval across job descriptions and profile. | Similar past applications. |
 
 ## 7. RAG Strategy
+
+> **Status:** Deferred. The current implementation operates with zero AI/embeddings;
+> matching, normalization, and preparation are deterministic. The following notes are
+> the future plan and are not active today.
 
 * Embed job descriptions, candidate profile sections, and past application summaries.
 * Store embeddings in `pgvector`.

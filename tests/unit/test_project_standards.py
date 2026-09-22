@@ -1,13 +1,28 @@
 """Project structure and documentation standards."""
 
+import subprocess
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
+def _is_gitignored(name: str) -> bool:
+    try:
+        return subprocess.run(
+            ["git", "check-ignore", "-q", name],
+            cwd=PROJECT_ROOT,
+            check=False,
+            capture_output=True,
+        ).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def test_no_env_file_committed() -> None:
     """Real environment files must never be committed."""
-    assert not (PROJECT_ROOT / ".env").exists()
+    env_path = PROJECT_ROOT / ".env"
+    if env_path.exists():
+        assert _is_gitignored(".env"), ".env must be gitignored so it is never committed"
 
 
 def test_no_raw_placeholder_tokens() -> None:

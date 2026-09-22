@@ -11,10 +11,10 @@
 
 * **Backend:** Python 3.12+, FastAPI, Pydantic v2, SQLModel or SQLAlchemy, Alembic.
 * **Frontend:** Next.js 14+ (App Router), TypeScript, Tailwind CSS.
-* **Database:** PostgreSQL 15+ with pgvector.
-* **Queue/Workers:** Redis, Celery, Celery Beat.
-* **Browser automation:** Playwright (Python).
-* **LLM:** LangChain / LangGraph with provider-agnostic models.
+* **Database:** PostgreSQL 15+ (pgvector deferred; no embeddings in the current implementation).
+* **Queue/Workers:** Redis, Celery, Celery Beat (declared; optional at runtime today).
+* **Browser automation:** Playwright (Python) (declared; unused by the current pipeline).
+* **LLM:** None installed. All intelligence is deterministic; LangChain/LangGraph and AI SDKs are deferred. Do not add AI SDKs without an ADR + explicit approval.
 * **Testing:** pytest, Playwright Test, Jest, React Testing Library.
 
 ## 3. Code Quality

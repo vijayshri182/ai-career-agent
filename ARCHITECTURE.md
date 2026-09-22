@@ -257,7 +257,7 @@ sequenceDiagram
 flowchart LR
     subgraph Storage
         P[(PostgreSQL relational)]
-        V[(pgvector embeddings)]
+        V[(pgvector embeddings — deferred)]
         O[Object store documents]
         R[(Redis cache/queue)]
         L[Audit log stream]
@@ -280,9 +280,9 @@ flowchart LR
 ```
 
 * **PostgreSQL:** Canonical source for profile, jobs, applications, contacts, approvals, audit events.
-* **pgvector:** Embeddings for semantic job/profile matching and RAG.
+* **pgvector:** Embeddings for semantic job/profile matching and RAG — **deferred**; no embeddings/vector columns exist in the current implementation (matching is a deterministic rule-based scorer).
 * **Object store:** Resume PDFs, cover letters, supporting documents.
-* **Redis:** Queue, cache, session store.
+* **Redis:** Queue, cache, session store — declared; optional at runtime today.
 * **Audit log stream:** Append-only record of decisions and security events (initially a database table; later a dedicated log store).
 
 ## 12. Security / Trust Boundaries
@@ -325,10 +325,10 @@ See [`SECURITY.md`](SECURITY.md) for the complete security model.
 |-------|--------|-----------|
 | Backend | Python + FastAPI | Fast, async, excellent typing, large AI ecosystem. |
 | Frontend | Next.js (React) | SSR/SSG, strong ecosystem, easy Vercel/cloud deployment. |
-| Database | PostgreSQL + pgvector | Mature, relational integrity, vector search in same store initially. |
-| Queue / Cache | Redis + Celery | Simple, reliable, well-understood for Python. |
-| Browser automation | Playwright | Reliable automation, cross-browser, strong debugging. |
-| LLM abstraction | LangChain / LangGraph | Provider swap without rewriting application logic. |
+| Database | PostgreSQL (pgvector deferred) | Mature, relational integrity; vector search later if semantic matching lands. |
+| Queue / Cache | Redis + Celery | Declared; optional at runtime today (scheduler is in-process and OFF by default). |
+| Browser automation | Playwright | Declared; unused by the current recording-only pipeline. |
+| LLM abstraction | None (deferred) | All intelligence deterministic; LangChain/LangGraph and AI SDKs not installed. |
 | Auth | OAuth2 / OIDC | Delegated identity, no password storage. |
 | Documents | S3-compatible object store | Cheap, durable, encrypted. |
 | Observability | Prometheus + Grafana + structured logs | Open standards, portable between clouds. |

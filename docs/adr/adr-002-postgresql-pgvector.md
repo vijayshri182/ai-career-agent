@@ -2,11 +2,18 @@
 
 ## Status
 
-Proposed
+Accepted for PostgreSQL; pgvector deferred
 
 ## Context
 
 The system needs a relational store for profiles, jobs, applications, approvals, and audit events. It also needs vector search for semantic job/profile matching and RAG.
+
+## Current Implementation (v0.1.0)
+
+PostgreSQL 16 is the primary store (migrations at `migrations/`). Vector search is
+**not** active: the `pgvector` extension is not used, no embedding columns exist, and
+matching is deterministic rule-based scoring. If semantic matching is added later, the
+pgvector decision below applies; until then embeddings are out of scope.
 
 ## Decision
 

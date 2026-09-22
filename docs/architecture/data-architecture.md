@@ -6,7 +6,7 @@
 flowchart LR
     subgraph Stores
         PG[(PostgreSQL)]
-        VEC[(pgvector)]
+        VEC[(pgvector — deferred)]
         OBJ[Object Store]
         RED[(Redis)]
         AUDIT[Audit Log]
@@ -33,7 +33,7 @@ flowchart LR
 | Store | Data | Access Pattern |
 |-------|------|----------------|
 | PostgreSQL | Profiles, jobs, matches, applications, approvals, audit events | Relational transactions, OLTP |
-| pgvector | Job and profile embeddings | Similarity search, RAG |
+| pgvector (deferred) | Job and profile embeddings | Similarity search, RAG — not active today |
 | Object store | Resume PDFs, cover letters, supporting documents | Large binary blobs, signed URLs |
 | Redis | Task queue, cache, sessions | Fast key/value, pub/sub |
 | Audit log | Security events, approval decisions | Append-only |

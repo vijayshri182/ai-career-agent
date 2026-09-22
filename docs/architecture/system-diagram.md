@@ -29,13 +29,13 @@ flowchart TB
 
     subgraph Data
         Postgres[(PostgreSQL)]
-        Vector[(pgvector)]
-        Redis[(Redis Queue/Cache)]
+        Vector[(pgvector — deferred)]
+        Redis[(Redis Queue/Cache — declared, optional)]
         Store[Object Store]
         Audit[Audit Logs]
     end
 
-    LLM[LLM Abstraction Layer]
+    LLM[LLM Abstraction Layer — deferred, not installed]
 
     User --> Dashboard
     Dashboard --> Gateway
@@ -43,7 +43,6 @@ flowchart TB
     Orchestrator --> Agents
     Agents --> Tools
     Agents --> Data
-    Agents <--> LLM
     DiscoveryAgent --> Sources
     ApplicationAgent --> Playwright
     OutreachAgent --> Email
@@ -56,5 +55,6 @@ flowchart TB
 3. The gateway routes to services or triggers the orchestrator.
 4. The orchestrator dispatches agents to Celery workers.
 5. Agents use tools (HTTP, Playwright, email) and data stores.
-6. The LLM abstraction layer supports structured generation and analysis.
+6. The LLM abstraction layer and pgvector vector store are **deferred**; today all
+   generation, matching, and analysis is deterministic and network-free for AI content.
 7. Audit logs capture every security-relevant decision.

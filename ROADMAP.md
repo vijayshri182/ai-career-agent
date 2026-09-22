@@ -2,6 +2,16 @@
 
 This roadmap breaks the project into self-contained phases. Each phase defines objective, features, components, APIs, data changes, tests, security, acceptance criteria, dependencies, and estimated complexity.
 
+## Current Status (master plan)
+
+* **Phases 0–5, 1.5, 9, 12** — implemented and exercised by unit + integration tests.
+* **Phase 6 (Human Approval)** — backend approvals/decisions + candidate-scoped list/detail/decide endpoints and audit trail are implemented; dashboard UI remains.
+* **Phase 7 (Application Automation)** — foundation implemented (run state machine, retry/backoff, challenge hand-off gates); actual site submission is a future increment and never executes today.
+* **Phase 8 (Contact Discovery)** — service + APIs implemented with public-evidence-only rules (no guessed emails; confidence threshold).
+* **Phase 10 (Dashboard + Notifications)** — services + APIs implemented (gated by feature flags); no external channels today.
+* **Phases 3, 11, 13** — remain future work (job verification depth, cloud deployment, production hardening).
+* Cross-cutting: ingestion safety + dedup + signals + outreach safety + observability (audit read API, structured JSON logging) + failure recovery (DB-level at-most-once guards) + security review (SECRET_KEY production guard) + AI/LLM boundary (zero AI SDKs installed; deterministic only) + scheduler OFF by default. See [`docs/verification/evidence.md`](docs/verification/evidence.md).
+
 ## Legend
 
 * **Complexity:** XS (trivial) → S → M → L → XL (large, multi-feature).
@@ -29,7 +39,7 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
   * No raw placeholder tokens (such as `<PLACEHOLDER>` or mustache-style placeholders) or credentials in committed files.
 * **Dependencies:** Repository must exist.
 * **Complexity:** M
-* **Status:** This phase is the current deliverable.
+* **Status:** Completed.
 
 ---
 

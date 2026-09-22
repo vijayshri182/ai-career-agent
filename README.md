@@ -2,18 +2,15 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phase 1 — Candidate Profile backend foundation, Authentication & Challenge Management
-> foundation, and the Phase 1 frontend (Next.js) are complete. **Phase 2 — Job Discovery** backend
-> foundation (source adapters, robots.txt compliance, normalization, deduplication, freshness,
-> scheduler, API routers, migration) is complete and exercised through integration tests.
-> **Phase 4 — AI Job Matching** backend (deterministic, explainable ten-component scoring engine,
-> untrusted job-text parsing, skills vocabulary + synonym matching, configurable weights/threshold,
-> idempotent `job_matches` persistence + migration, candidate-scoped APIs) is complete and exercised
-> through unit + integration tests. **Phase 5 — Resume & Application Preparation** backend foundation
-> (deterministic best-resume selection, fact-grounded screening questions + answers, versioned
-> encrypted documents: cover letter, tailored resume, answers sheet, with structured hallucination
-> validation and `fact_sources` traceability) is complete and exercised through unit + integration tests.
-> No application automation, submission, or production integrations are implemented yet.
+> **Status:** Phases 1–15 of the master plan are complete and exercised through
+> unit + integration tests on both SQLite (test suite) and PostgreSQL 16 (validated
+> end-to-end). Highlights: candidate profile + auth/challenges foundation; deterministic
+> AI job matching; fact-grounded application prep; job-source strategy with an optional,
+> credential-gated Adzuna adapter; ingestion safety (quarantine, idempotent replay);
+> recruiter-signal pipeline; outreach with a **recording sender only (outbound = 0)**,
+> candidate-scoped approvals + audit-trail API, and structured JSON logging. The
+> scheduler is OFF by default, no AI/LLM SDKs are installed (the AI boundary is enforced
+> at the dependency level), and no external AI calls are made.
 
 ## Vision
 
@@ -88,6 +85,25 @@ ruff check src tests
 mypy src
 ```
 
+## Configuration (`.env`)
+
+Secrets and knobs come from environment variables (see `src/backend/core/config.py`
+for the full list). The `.env` file is gitignored. Key settings:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `DATABASE_URL` | `postgresql+asyncpg://...` | Async engine URL (dev/tests keep `tests/conftest.py` on SQLite) |
+| `SECRET_KEY` | `change-me-in-production` | Forbidden (boot error) when `APP_ENV=production` and unset/placeholder |
+| `ENCRYPTION_KEY` | unset | Fernet key for PII encryption (store secrets with `generate_encryption_key()`) |
+| `APP_ENV` | `development` | `production` enables the SECRET_KEY guard |
+| `DISCOVERY_ENABLED` | `false` | Scheduler is **OFF by default**; only explicit opt-in starts runs |
+| `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | unset | Optional Adzuna adapter credentials — env-only, never fabricated; missing creds = no network |
+| `OUTREACH_ENABLED` | `true` | Sending is plugged to the recording sender (outbound = 0); approval required by default |
+| `AUTOMATION_ENABLED` | `true` | Automation runs are recorded only; submission is a future phase |
+
+Structured (JSON) logging is applied at bootstrap (`backend/core/logging_utils.py`),
+controlled by `LOG_LEVEL`.
+
 ## MVP Scope
 
 The first usable MVP proves:
@@ -109,12 +125,12 @@ The system is being built for **Vijay Shrivastava**. The candidate profile will 
 
 * **Backend:** Python + FastAPI
 * **Frontend:** Next.js (React)
-* **Database:** PostgreSQL + pgvector
-* **Queue / Cache:** Redis + Celery
-* **Browser automation:** Playwright
-* **LLM abstraction:** LangChain/LangGraph with swappable providers
+* **Database:** PostgreSQL 16 (pgvector deferred — no embeddings today)
+* **Queue / Cache:** Redis + Celery (declared; not required at runtime — scheduler is in-process and OFF by default)
+* **Browser automation:** Playwright (declared; unused at runtime today)
+* **LLM abstraction:** None. All intelligence is deterministic; LangChain/LangGraph and all AI SDKs are deferred (and not installed). See [`docs/adr/`](docs/adr/).
 * **Auth:** OAuth2 / OIDC
-* **Document storage:** S3-compatible object store
+* **Document storage:** S3-compatible object store (local storage provider by default)
 * **Deployment:** Docker, cloud-ready (initial target: container platform)
 
 See [`docs/adr/`](docs/adr/) for the full rationale and alternatives considered.
