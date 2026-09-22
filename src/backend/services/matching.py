@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import contextlib
 import re
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from html import unescape
@@ -26,6 +27,7 @@ from uuid import UUID
 from backend.models.candidate import Candidate, CandidateSkill, Experience
 from backend.models.job import Job
 from backend.models.job_match import JobMatch, JobMatchStatus
+from backend.models.notification import NotificationCategory
 from backend.repositories.candidate import CandidateRepository
 from backend.repositories.experience import ExperienceRepository
 from backend.repositories.job import JobRepository
@@ -903,6 +905,8 @@ class JobMatchingService:
         experience_repo: ExperienceRepository,
         scorer: JobMatchScorer,
         parser: JobTextParser | None = None,
+        notifier: Callable[..., Awaitable[None]] | None = None,
+        new_match_threshold: float = 0.85,
     ) -> None:
         self._candidate_repo = candidate_repo
         self._job_repo = job_repo
@@ -911,6 +915,8 @@ class JobMatchingService:
         self._experience_repo = experience_repo
         self._scorer = scorer
         self._parser = parser or JobTextParser()
+        self._notifier = notifier
+        self._new_match_threshold = new_match_threshold
 
     async def evaluate(self, candidate_id: UUID, user_id: UUID, job_id: UUID) -> JobMatchRead:
         candidate = await self._candidate_repo.get_for_user_or_404(candidate_id, user_id)
@@ -1040,6 +1046,23 @@ class JobMatchingService:
             rules_version=self._scorer.rules_version,
             evaluated_at=now,
         )
+        if (
+            self._notifier is not None
+            and output.is_match
+            and output.score >= self._new_match_threshold
+        ):
+            await self._notifier(
+                actor_id=candidate.user_id,
+                candidate_id=candidate.id,
+                category=NotificationCategory.NEW_MATCH,
+                title="High-match job found",
+                detail=(
+                    f"{job.title} at {job.location or 'an unknown location'} "
+                    f"matched at {output.score:.0%}."
+                ),
+                entity_type="job_match",
+                entity_id=result.id,
+            )
         return JobMatchRead.model_validate(result)
 
     @staticmethod
