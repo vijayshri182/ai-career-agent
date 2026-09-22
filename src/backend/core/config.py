@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -17,6 +17,15 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def _guard_production_secrets(self) -> "Settings":
+        if self.app_env == "production" and self.secret_key in (
+            "",
+            "change-me-in-production",
+        ):
+            raise ValueError("SECRET_KEY must be set in production")
+        return self
 
     app_name: str = "AI Career Agent"
     app_env: str = "development"
@@ -70,6 +79,9 @@ class Settings(BaseSettings):
         default=10, alias="DISCOVERY_DEFAULT_REQUESTS_PER_MINUTE"
     )
 
+    adzuna_app_id: str | None = Field(default=None, alias="ADZUNA_APP_ID")
+    adzuna_app_key: str | None = Field(default=None, alias="ADZUNA_APP_KEY")
+
     match_rules_version: str = Field(default="3.0.0", alias="MATCH_RULES_VERSION")
     match_weights: str = Field(
         default=(
@@ -101,6 +113,10 @@ class Settings(BaseSettings):
     analytics_enabled: bool = Field(default=True, alias="ANALYTICS_ENABLED")
 
     notification_enabled: bool = Field(default=True, alias="NOTIFICATION_ENABLED")
+
+    notification_new_match_threshold: float = Field(
+        default=0.85, alias="NOTIFICATION_NEW_MATCH_THRESHOLD"
+    )
 
 
 @lru_cache

@@ -1,6 +1,6 @@
 """FastAPI dependencies."""
 
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from uuid import UUID
 
 import httpx
@@ -13,6 +13,7 @@ from backend.core.exceptions import ForbiddenError, NotFoundError, ValidationErr
 from backend.core.security_service import get_security_service
 from backend.db.engine import make_engine, make_session_factory
 from backend.models.candidate import Candidate
+from backend.models.notification import NotificationCategory
 from backend.models.user import User
 from backend.repositories.agent_task import AgentTaskRepository
 from backend.repositories.application import (
@@ -39,6 +40,10 @@ from backend.repositories.job import JobRepository
 from backend.repositories.job_match import JobMatchRepository
 from backend.repositories.job_source import JobSourceRepository
 from backend.repositories.learning import FeedbackRepository, RecommendationRepository
+from backend.repositories.notification import (
+    NotificationPreferenceRepository,
+    NotificationRepository,
+)
 from backend.repositories.outreach import (
     OutreachMessageRepository,
     OutreachMessageVersionRepository,
@@ -58,12 +63,15 @@ from backend.repositories.secret_reference import SecretReferenceRepository
 from backend.repositories.skill import SkillRepository
 from backend.repositories.user import UserRepository
 from backend.repositories.workflow_run import WorkflowRunRepository
+from backend.services.adapters.adzuna import AdzunaAdapter
 from backend.services.adapters.base import JobSourceAdapter
+from backend.services.adapters.dispatch import RoutingAdapter
 from backend.services.adapters.generic_http import GenericHttpAdapter
 from backend.services.analytics import AnalyticsService
 from backend.services.application_automation import ApplicationAutomationService
 from backend.services.application_prep import ApplicationPrepService
 from backend.services.approval import ApprovalService
+from backend.services.audit import AuditTrailService
 from backend.services.auth import AuthService
 from backend.services.authentication import AuthenticationService
 from backend.services.authentication_provider import AuthProviderService
@@ -71,6 +79,7 @@ from backend.services.browser_session import BrowserSessionManager
 from backend.services.candidate import CandidateService
 from backend.services.certification import CertificationService
 from backend.services.challenge import ChallengeService
+from backend.services.dashboard import DashboardService
 from backend.services.discovery import DiscoveryService
 from backend.services.education import EducationService
 from backend.services.experience import ExperienceService
@@ -79,6 +88,7 @@ from backend.services.job import JobService
 from backend.services.job_source import JobSourceService
 from backend.services.matching import JobMatchingService, JobMatchScorer, ScoreWeights
 from backend.services.normalization import JobNormalizer
+from backend.services.notifications import NotificationService
 from backend.services.outreach import OutreachService
 from backend.services.profile import ProfileService
 from backend.services.recruiter_directory import make_directory_fetcher
@@ -342,12 +352,21 @@ def _make_adapter_factory(settings: Settings) -> Callable[[httpx.AsyncClient], J
     normalizer = JobNormalizer()
 
     def factory(client: httpx.AsyncClient) -> JobSourceAdapter:
-        return GenericHttpAdapter(
+        generic = GenericHttpAdapter(
             client,
             normalizer,
             user_agent=settings.crawl_user_agent,
             timeout=settings.crawl_timeout_seconds,
         )
+        adzuna = AdzunaAdapter(
+            client,
+            normalizer,
+            app_id=settings.adzuna_app_id,
+            app_key=settings.adzuna_app_key,
+            user_agent=settings.crawl_user_agent,
+            timeout=settings.crawl_timeout_seconds,
+        )
+        return RoutingAdapter(default=generic, specialized={"adzuna": adzuna})
 
     return factory
 
@@ -364,6 +383,25 @@ async def get_job_service(session: AsyncSession = Depends(get_session)) -> JobSe
     return JobService(
         JobRepository(session),
         CandidateRepository(session),
+    )
+
+
+async def get_audit_trail_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> AuditTrailService:
+    """Candidate-scoped, read-only audit trail service.
+
+    Ownership is enforced via ``get_owned_candidate`` (404 for cross-user or
+    non-existent candidates); the service re-checks ownership as
+    defense-in-depth.
+    """
+    return AuditTrailService(
+        candidate_id=candidate.id,
+        actor_id=candidate.user_id,
+        candidate_repo=CandidateRepository(session),
+        audit_repo=AuditRepository(session),
     )
 
 
@@ -406,6 +444,8 @@ async def get_job_matching_service(
         skill_repo=SkillRepository(session),
         experience_repo=ExperienceRepository(session),
         scorer=scorer,
+        notifier=await _build_notifier_for_any(session),
+        new_match_threshold=settings.notification_new_match_threshold,
     )
 
 
@@ -449,6 +489,7 @@ async def get_approval_service(
         actor_id=candidate.user_id,
         candidate_id=candidate.id,
         autonomy_level=settings.autonomy_level,
+        notifier=await _build_notifier(session, candidate.user_id, candidate.id),
     )
 
 
@@ -561,6 +602,138 @@ async def get_analytics_service(
         certification_repo=CertificationRepository(session),
         message_repo=OutreachMessageRepository(session),
         feedback_repo=FeedbackRepository(session),
+        recommendation_repo=RecommendationRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=actor_id,
+        candidate_id=candidate.id,
+    )
+
+
+async def _build_notifier(
+    session: AsyncSession,
+    actor_id: UUID,
+    candidate_id: UUID,
+) -> Callable[..., Awaitable[None]]:
+    """Build the candidate-scoped alert hook used by approval/matching flows."""
+    service = NotificationService(
+        candidate_repo=CandidateRepository(session),
+        notification_repo=NotificationRepository(session),
+        preference_repo=NotificationPreferenceRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=actor_id,
+        candidate_id=candidate_id,
+    )
+
+    async def notify(
+        *,
+        category: NotificationCategory,
+        title: str,
+        detail: str,
+        entity_type: str | None = None,
+        entity_id: UUID | str | None = None,
+    ) -> None:
+        await service.notify(
+            category=category,
+            title=title,
+            detail=detail,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+
+    return notify
+
+
+async def _build_notifier_for_any(session: AsyncSession) -> Callable[..., Awaitable[None]]:
+    """Alert hook that accepts actor_id/candidate_id on every call.
+
+    Used by services that are NOT candidate-scoped (matching), so the notifier
+    targets whichever candidate is being evaluated.
+    """
+
+    async def notify(
+        *,
+        actor_id: UUID,
+        candidate_id: UUID,
+        category: NotificationCategory,
+        title: str,
+        detail: str,
+        entity_type: str | None = None,
+        entity_id: UUID | str | None = None,
+    ) -> None:
+        service = NotificationService(
+            candidate_repo=CandidateRepository(session),
+            notification_repo=NotificationRepository(session),
+            preference_repo=NotificationPreferenceRepository(session),
+            audit_repo=AuditRepository(session),
+            actor_id=actor_id,
+            candidate_id=candidate_id,
+        )
+        await service.notify(
+            category=category,
+            title=title,
+            detail=detail,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+
+    return notify
+
+
+async def get_notification_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> NotificationService:
+    """Candidate-scoped notification service."""
+    settings = get_settings()
+    if not settings.notification_enabled:
+        raise ForbiddenError("Notifications are disabled")
+    return NotificationService(
+        candidate_repo=CandidateRepository(session),
+        notification_repo=NotificationRepository(session),
+        preference_repo=NotificationPreferenceRepository(session),
+        audit_repo=AuditRepository(session),
+        actor_id=candidate.user_id,
+        candidate_id=candidate.id,
+    )
+
+
+async def get_dashboard_service(
+    candidate_id: UUID,
+    candidate: Candidate = Depends(get_owned_candidate),
+    session: AsyncSession = Depends(get_session),
+) -> DashboardService:
+    """Candidate-scoped dashboard observability service."""
+    settings = get_settings()
+    if not (settings.notification_enabled and settings.analytics_enabled):
+        raise ForbiddenError("Dashboard is disabled")
+    actor_id = candidate.user_id
+    return DashboardService(
+        candidate_repo=CandidateRepository(session),
+        analytics=AnalyticsService(
+            candidate_repo=CandidateRepository(session),
+            job_repo=JobRepository(session),
+            match_repo=JobMatchRepository(session),
+            application_repo=ApplicationRepository(session),
+            skill_repo=SkillRepository(session),
+            experience_repo=ExperienceRepository(session),
+            education_repo=EducationRepository(session),
+            certification_repo=CertificationRepository(session),
+            message_repo=OutreachMessageRepository(session),
+            feedback_repo=FeedbackRepository(session),
+            recommendation_repo=RecommendationRepository(session),
+            audit_repo=AuditRepository(session),
+            actor_id=actor_id,
+            candidate_id=candidate.id,
+        ),
+        notifications=NotificationService(
+            candidate_repo=CandidateRepository(session),
+            notification_repo=NotificationRepository(session),
+            preference_repo=NotificationPreferenceRepository(session),
+            audit_repo=AuditRepository(session),
+            actor_id=actor_id,
+            candidate_id=candidate.id,
+        ),
         recommendation_repo=RecommendationRepository(session),
         audit_repo=AuditRepository(session),
         actor_id=actor_id,
