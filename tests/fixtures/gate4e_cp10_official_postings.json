@@ -1,0 +1,271 @@
+{
+  "artifact": "gate4e-cp10-official-postings",
+  "labels": [
+    "REAL official-source discovery + verification; no Gmail access, no LinkedIn fetch"
+  ],
+  "alerts_evaluated": 5,
+  "rows": [
+    {
+      "index": 1,
+      "job_title": "Assistant Vice President \u2013 Product & Technology Innovation",
+      "company_name": "Evolute Group",
+      "job_location": null,
+      "original_job_url": "https://www.linkedin.com/jobs/view/4468339544",
+      "gmail_message_id": "1a0b4d1722b6fab3",
+      "official_domain": "evolute.in",
+      "official_job_url": null,
+      "official_job_id": null,
+      "verification_status": "PARTIAL",
+      "verification_reason": "authoritative company identified but specific posting cannot be conclusively tied to the alert",
+      "title_correspondence": false,
+      "company_correspondence": true,
+      "description": null,
+      "skills": [],
+      "seniority": null,
+      "years": null,
+      "work_mode": null,
+      "compensation": null,
+      "provenance": {
+        "official_domain": "VERIFIED",
+        "identity_evidence": "VERIFIED|evolute.in is Evolute Group's official website: its About page (https://www.evolute.in/about-us) is titled 'About Evolute Group' and the homepage/logo carry 'Evolute Group' with tagline 'Techpowering the World'. HQ: 801, Grande Eddifice, Akruli Road, Kandivali East, Mumbai - which matches the AVP role's listed locations (Bengaluru/Mumbai, Kandivali East). Business verticals (fintech biometric IAM, cleantech/ESS, industrial electronics) match the AVP job description exactly. Distinct entities were ruled out: Zurich-based 'Evolute Group' (wealth management), evolet.in (pharma), EvolTech, and the unrelated Evolute Fintech Innovations Ltd which is a group company of the same Evolute Group.",
+        "official_job_url": "MISSING",
+        "official_job_id": "MISSING",
+        "verification_status": "MISSING",
+        "description": "MISSING",
+        "skills": "MISSING",
+        "seniority": "MISSING",
+        "years": "MISSING",
+        "work_mode": "MISSING",
+        "compensation": "MISSING"
+      },
+      "evidence_urls": [
+        "https://www.linkedin.com/jobs/view/4468339544"
+      ],
+      "enrichment_covered": [],
+      "enrichment_missing": [],
+      "notes": [
+        "evolute.in is Evolute Group's official website: its About page (https://www.evolute.in/about-us) is titled 'About Evolute Group' and the homepage/logo carry 'Evolute Group' with tagline 'Techpowering the World'. HQ: 801, Grande Eddifice, Akruli Road, Kandivali East, Mumbai - which matches the AVP role's listed locations (Bengaluru/Mumbai, Kandivali East). Business verticals (fintech biometric IAM, cleantech/ESS, industrial electronics) match the AVP job description exactly. Distinct entities were ruled out: Zurich-based 'Evolute Group' (wealth management), evolet.in (pharma), EvolTech, and the unrelated Evolute Fintech Innovations Ltd which is a group company of the same Evolute Group.",
+        "official_domain=evolute.in (from authoritative hint for 'evolute')",
+        "6 matching message(s)",
+        "first distinct used",
+        "same posting as alert 4"
+      ]
+    },
+    {
+      "index": 2,
+      "job_title": "Senior Director \u2013 Technical Program Management",
+      "company_name": "Mobileum",
+      "job_location": null,
+      "original_job_url": "https://www.linkedin.com/jobs/view/4419401380",
+      "gmail_message_id": "1a0a436ca640b58f",
+      "official_domain": "mobileum.com",
+      "official_job_url": null,
+      "official_job_id": null,
+      "verification_status": "PARTIAL",
+      "verification_reason": "authoritative company identified but specific posting cannot be conclusively tied to the alert",
+      "title_correspondence": false,
+      "company_correspondence": true,
+      "description": null,
+      "skills": [],
+      "seniority": null,
+      "years": null,
+      "work_mode": null,
+      "compensation": null,
+      "provenance": {
+        "official_domain": "VERIFIED",
+        "identity_evidence": "VERIFIED|Mobileum official website and About page at mobileum.com (https://www.mobileum.com/, https://www.mobileum.com/about) identify mobileum.com as the company's official domain",
+        "official_job_url": "MISSING",
+        "official_job_id": "MISSING",
+        "verification_status": "MISSING",
+        "description": "MISSING",
+        "skills": "MISSING",
+        "seniority": "MISSING",
+        "years": "MISSING",
+        "work_mode": "MISSING",
+        "compensation": "MISSING"
+      },
+      "evidence_urls": [
+        "https://www.linkedin.com/jobs/view/4419401380"
+      ],
+      "enrichment_covered": [],
+      "enrichment_missing": [],
+      "notes": [
+        "Mobileum official website and About page at mobileum.com (https://www.mobileum.com/, https://www.mobileum.com/about) identify mobileum.com as the company's official domain",
+        "official_domain=mobileum.com (from authoritative hint for 'mobileum')",
+        "Mobileum official website careers page (mobileum.com/careers) and careers-and-culture page",
+        "3 matching message(s)",
+        "first distinct used"
+      ]
+    },
+    {
+      "index": 3,
+      "job_title": "CPRD Modernization",
+      "company_name": "Capgemini Engineering",
+      "job_location": null,
+      "original_job_url": "https://www.linkedin.com/jobs/view/4468256034",
+      "gmail_message_id": "1a0b465688809855",
+      "official_domain": "capgemini.com",
+      "official_job_url": "https://www.capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization",
+      "official_job_id": "519193",
+      "verification_status": "VERIFIED",
+      "verification_reason": "VERIFIED",
+      "title_correspondence": true,
+      "company_correspondence": true,
+      "description": null,
+      "skills": [],
+      "seniority": null,
+      "years": null,
+      "work_mode": null,
+      "compensation": null,
+      "provenance": {
+        "official_domain": "VERIFIED",
+        "identity_evidence": "VERIFIED|Capgemini Engineering is a Capgemini Group brand; the official Capgemini brand page (https://www.capgemini.com/about-us/who-we-are/our-brands/capgemini-engineering) and careers page for Capgemini Engineering on capgemini.com ('We're an integral part of the Capgemini Group') establish capgemini.com as the parent company's official domain",
+        "official_job_url": "VERIFIED|https://www.capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization",
+        "official_job_id": "VERIFIED|https://www.capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization",
+        "verification_status": "VERIFIED|https://www.capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization",
+        "description": "MISSING",
+        "skills": "MISSING",
+        "seniority": "MISSING",
+        "years": "MISSING",
+        "work_mode": "MISSING",
+        "compensation": "MISSING"
+      },
+      "evidence_urls": [
+        "https://www.capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization",
+        "https://www.capgemini.com/in-en/careers",
+        "https://www.linkedin.com/jobs/view/4468256034"
+      ],
+      "enrichment_covered": [
+        "official_job_url",
+        "official_job_id",
+        "evidence_url"
+      ],
+      "enrichment_missing": [
+        "description",
+        "skills",
+        "seniority",
+        "years",
+        "work_mode",
+        "compensation"
+      ],
+      "notes": [
+        "Capgemini Engineering is a Capgemini Group brand; the official Capgemini brand page (https://www.capgemini.com/about-us/who-we-are/our-brands/capgemini-engineering) and careers page for Capgemini Engineering on capgemini.com ('We're an integral part of the Capgemini Group') establish capgemini.com as the parent company's official domain",
+        "official_domain=capgemini.com (from authoritative hint for 'capgemini engineering')",
+        "Capgemini official job search portal and official Capgemini Engineering careers page on capgemini.com",
+        "Exact-title posting on Capgemini's official jobs platform (capgemini.com/in-en/jobs/519193-en_GB_SAPBTP/CPRD%20Modernization). CPRD = Consumer Products, Retail & Distribution (Capgemini terminology). Unique exact-title posting; no competing same-title official posting found.",
+        "5 matching message(s)",
+        "first distinct used"
+      ]
+    },
+    {
+      "index": 4,
+      "job_title": "Assistant Vice President \u2013 Product & Technology Innovation",
+      "company_name": "Evolute Group",
+      "job_location": null,
+      "original_job_url": "https://www.linkedin.com/jobs/view/4468339544",
+      "gmail_message_id": "1a0b3f786d86c1f2",
+      "official_domain": "evolute.in",
+      "official_job_url": null,
+      "official_job_id": null,
+      "verification_status": "PARTIAL",
+      "verification_reason": "authoritative company identified but specific posting cannot be conclusively tied to the alert",
+      "title_correspondence": false,
+      "company_correspondence": true,
+      "description": null,
+      "skills": [],
+      "seniority": null,
+      "years": null,
+      "work_mode": null,
+      "compensation": null,
+      "provenance": {
+        "official_domain": "VERIFIED",
+        "identity_evidence": "VERIFIED|evolute.in is Evolute Group's official website: its About page (https://www.evolute.in/about-us) is titled 'About Evolute Group' and the homepage/logo carry 'Evolute Group' with tagline 'Techpowering the World'. HQ: 801, Grande Eddifice, Akruli Road, Kandivali East, Mumbai - which matches the AVP role's listed locations (Bengaluru/Mumbai, Kandivali East). Business verticals (fintech biometric IAM, cleantech/ESS, industrial electronics) match the AVP job description exactly. Distinct entities were ruled out: Zurich-based 'Evolute Group' (wealth management), evolet.in (pharma), EvolTech, and the unrelated Evolute Fintech Innovations Ltd which is a group company of the same Evolute Group.",
+        "official_job_url": "MISSING",
+        "official_job_id": "MISSING",
+        "verification_status": "MISSING",
+        "description": "MISSING",
+        "skills": "MISSING",
+        "seniority": "MISSING",
+        "years": "MISSING",
+        "work_mode": "MISSING",
+        "compensation": "MISSING"
+      },
+      "evidence_urls": [
+        "https://www.linkedin.com/jobs/view/4468339544"
+      ],
+      "enrichment_covered": [],
+      "enrichment_missing": [],
+      "notes": [
+        "evolute.in is Evolute Group's official website: its About page (https://www.evolute.in/about-us) is titled 'About Evolute Group' and the homepage/logo carry 'Evolute Group' with tagline 'Techpowering the World'. HQ: 801, Grande Eddifice, Akruli Road, Kandivali East, Mumbai - which matches the AVP role's listed locations (Bengaluru/Mumbai, Kandivali East). Business verticals (fintech biometric IAM, cleantech/ESS, industrial electronics) match the AVP job description exactly. Distinct entities were ruled out: Zurich-based 'Evolute Group' (wealth management), evolet.in (pharma), EvolTech, and the unrelated Evolute Fintech Innovations Ltd which is a group company of the same Evolute Group.",
+        "official_domain=evolute.in (from authoritative hint for 'evolute')",
+        "6 matching message(s)",
+        "first distinct used",
+        "same posting as alert 1"
+      ]
+    },
+    {
+      "index": 5,
+      "job_title": "Dir AI/ML Engineering",
+      "company_name": "Optum",
+      "job_location": null,
+      "original_job_url": "https://www.linkedin.com/jobs/view/4466841382",
+      "gmail_message_id": "1a0af3f0c17c2d3f",
+      "official_domain": "optum.com",
+      "official_job_url": "https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120",
+      "official_job_id": "2358453",
+      "verification_status": "PARTIAL",
+      "verification_reason": "final status derived from ambiguity rule; multiple same-title official postings on the company-owned platform; the specific requisition cannot be conclusively tied to the alert",
+      "title_correspondence": true,
+      "company_correspondence": true,
+      "description": null,
+      "skills": [],
+      "seniority": null,
+      "years": null,
+      "work_mode": null,
+      "compensation": "$134,600.00 - $230,800.00",
+      "provenance": {
+        "official_domain": "VERIFIED",
+        "identity_evidence": "VERIFIED|Optum official website and careers/About pages at optum.com (https://www.optum.com/, https://www.optum.com/careers.html, https://www.optum.com/en/about-us.html which states 'A UnitedHealth Group company') establish optum.com as the company's official domain",
+        "official_job_url": "VERIFIED|https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120",
+        "official_job_id": "VERIFIED|https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120",
+        "verification_status": "MISSING|https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120",
+        "description": "MISSING",
+        "skills": "MISSING",
+        "seniority": "MISSING",
+        "years": "MISSING",
+        "work_mode": "MISSING",
+        "compensation": "VERIFIED|https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120"
+      },
+      "evidence_urls": [
+        "https://careers.unitedhealthgroup.com/job/schaumburg/director-ai-ml-engineering-remote/34088/95691241120",
+        "https://careers.unitedhealthgroup.com/",
+        "https://www.linkedin.com/jobs/view/4466841382"
+      ],
+      "enrichment_covered": [
+        "compensation",
+        "official_job_url",
+        "official_job_id",
+        "evidence_url"
+      ],
+      "enrichment_missing": [
+        "description",
+        "skills",
+        "seniority",
+        "years",
+        "work_mode"
+      ],
+      "notes": [
+        "Optum official website and careers/About pages at optum.com (https://www.optum.com/, https://www.optum.com/careers.html, https://www.optum.com/en/about-us.html which states 'A UnitedHealth Group company') establish optum.com as the company's official domain",
+        "official_domain=optum.com (from authoritative hint for 'optum')",
+        "Optum official careers page (optum.com/careers.html) and the company-owned UnitedHealth Group careers platform (careers.unitedhealthgroup.com)",
+        "Posting on the company-owned UnitedHealth Group careers platform (Optum is a UnitedHealth Group company; job tagged #OptumTechPJ). Best title correspondence to the alert 'Dir AI/ML Engineering'.",
+        "alternate official posting: https://careers.unitedhealthgroup.com/job/eden-prairie/director-of-ai-ml-engineering-remote/34088/97566228480 (Requisition 2365975, Director of AI/ML Engineering - Remote)",
+        "alternate official posting: https://careers.unitedhealthgroup.com/job/eden-prairie/director-ai-ml-engineering/34088/98110634128 (Requisition 2378111, Director, AI/ML Engineering)",
+        "alternate official posting: https://careers.unitedhealthgroup.com/job/eden-prairie/sr-director-ai-ml-engineering-remote/50688/95092884144 (Requisition 2362582, Sr. Director, AI/ML Engineering - Remote)",
+        "alternate official posting: https://careers.unitedhealthgroup.com/job/eden-prairie/director-ai-ml-engineering-remote/50688/95092861520 (Requisition 2355813, Director, AI/ML Engineering - Remote)",
+        "6 matching message(s)",
+        "first distinct used"
+      ]
+    }
+  ]
+}
