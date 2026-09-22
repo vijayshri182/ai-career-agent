@@ -13,12 +13,13 @@ service, not here.
 from __future__ import annotations
 
 import asyncio
-import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 from uuid import UUID
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class AgentScheduler:
@@ -46,13 +47,13 @@ class AgentScheduler:
         if self.running:
             return
         self._task = asyncio.create_task(self._loop(), name="agent-scheduler")
-        logger.info("Agent scheduler started with interval %ds", self._interval)
+        logger.info("agent.scheduler_started", interval_seconds=self._interval)
 
     def stop(self) -> None:
         if self._task is not None:
             self._task.cancel()
             self._task = None
-            logger.info("Agent scheduler stopped")
+            logger.info("agent.scheduler_stopped")
 
     async def trigger_now(self) -> None:
         await self._tick()
@@ -69,7 +70,7 @@ class AgentScheduler:
         try:
             candidates = await self._get_candidates()
         except Exception:  # noqa: BLE001
-            logger.exception("Failed to load candidates for scheduled discovery")
+            logger.exception("agent.scheduler_load_failed")
             return
         for candidate in candidates:
             try:
@@ -78,4 +79,6 @@ class AgentScheduler:
                     continue
                 await self._run_fn(candidate.id, candidate.user_id)
             except Exception:  # noqa: BLE001
-                logger.exception("Scheduled discovery failed for %s", candidate.id)
+                logger.exception(
+                    "agent.discovery_run_failed", candidate_id=str(candidate.id)
+                )

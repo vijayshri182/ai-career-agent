@@ -2,6 +2,7 @@
 
 from uuid import UUID
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.audit import AuditEvent
@@ -38,3 +39,32 @@ class AuditRepository(BaseRepository[AuditEvent]):
             event_metadata=metadata or {},
             details=details,
         )
+
+    async def list_for_candidate(
+        self,
+        candidate_id: UUID,
+        *,
+        event_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[AuditEvent]:
+        stmt = select(AuditEvent).where(AuditEvent.candidate_id == str(candidate_id))
+        if event_type:
+            stmt = stmt.where(AuditEvent.event_type == event_type)
+        stmt = stmt.order_by(AuditEvent.__table__.c.created_at.desc()).limit(limit).offset(offset)
+        return list((await self.session.execute(stmt)).scalars().all())
+
+    async def count_for_candidate(
+        self,
+        candidate_id: UUID,
+        *,
+        event_type: str | None = None,
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(AuditEvent)
+            .where(AuditEvent.candidate_id == str(candidate_id))
+        )
+        if event_type:
+            stmt = stmt.where(AuditEvent.event_type == event_type)
+        return int((await self.session.execute(stmt)).scalar_one())

@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from backend.api.deps import make_discovery_service
 from backend.api.v1.applications import router as applications_router
 from backend.api.v1.approvals import router as approvals_router
+from backend.api.v1.audit import router as audit_router
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.authentication import router as authentication_router
 from backend.api.v1.automation import router as automation_router
@@ -29,6 +30,7 @@ from backend.api.v1.skills import router as skills_router
 from backend.api.v1.sources import router as sources_router
 from backend.core.config import get_settings
 from backend.core.exceptions import ForbiddenError, NotFoundError, ValidationError
+from backend.core.logging_utils import configure_logging
 from backend.db.engine import make_engine, make_session_factory
 from backend.models.candidate import Candidate
 from backend.models.job_source import JobSource
@@ -81,6 +83,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     finally:
         if scheduler is not None:
             scheduler.stop()
+
+
+configure_logging(log_level=get_settings().log_level)
 
 
 app = FastAPI(
@@ -139,6 +144,7 @@ app.include_router(discoveries_router, prefix="/api/v1")
 app.include_router(matching_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")
 app.include_router(approvals_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")
 app.include_router(automation_router, prefix="/api/v1")
 app.include_router(recruiter_contacts_router, prefix="/api/v1")
 app.include_router(outreach_router, prefix="/api/v1")
