@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Boolean, Column, DateTime, Index, Integer, String, Text, text
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship
 
 from backend.db.base import IdModel
@@ -86,13 +87,35 @@ class OutreachMessage(IdModel, table=True):
         foreign_key="outreach_messages.id", nullable=True, index=True
     )
 
-    channel: OutreachChannel = Field(default=OutreachChannel.EMAIL, index=True)
+    channel: OutreachChannel = Field(
+        sa_column=Column(
+            SAEnum(OutreachChannel, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="EMAIL",
+            index=True,
+        ),
+        default=OutreachChannel.EMAIL,
+    )
     subject: str = Field(sa_column=Column(String(255), nullable=False))
     body: str = Field(sa_column=Column(Text, nullable=False))
 
-    status: OutreachStatus = Field(default=OutreachStatus.DRAFT, index=True)
+    status: OutreachStatus = Field(
+        sa_column=Column(
+            SAEnum(OutreachStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="DRAFT",
+            index=True,
+        ),
+        default=OutreachStatus.DRAFT,
+    )
     response_status: ResponseStatus = Field(
-        default=ResponseStatus.NO_RESPONSE, index=True
+        sa_column=Column(
+            SAEnum(ResponseStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="NO_RESPONSE",
+            index=True,
+        ),
+        default=ResponseStatus.NO_RESPONSE,
     )
 
     is_follow_up: bool = Field(
@@ -175,15 +198,23 @@ class OutreachRun(IdModel, table=True):
             "uq_outreach_runs_open_message",
             "message_id",
             unique=True,
-            sqlite_where=text("status IN ('PENDING', 'RUNNING')"),
-            postgresql_where=text("status IN ('PENDING', 'RUNNING')"),
+            sqlite_where=text("status IN ('pending', 'running')"),
+            postgresql_where=text("status IN ('pending', 'running')"),
         ),
     )
 
     candidate_id: UUID = Field(foreign_key="candidates.id", nullable=False, index=True)
     message_id: UUID = Field(foreign_key="outreach_messages.id", nullable=False, index=True)
 
-    status: OutreachRunStatus = Field(default=OutreachRunStatus.PENDING, index=True)
+    status: OutreachRunStatus = Field(
+        sa_column=Column(
+            SAEnum(OutreachRunStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="PENDING",
+            index=True,
+        ),
+        default=OutreachRunStatus.PENDING,
+    )
     attempt_count: int = Field(
         sa_column=Column(Integer, nullable=False, server_default="0"), default=0
     )

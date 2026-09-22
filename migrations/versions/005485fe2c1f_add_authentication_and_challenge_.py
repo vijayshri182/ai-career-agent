@@ -101,7 +101,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_challenges_provider_id'), 'challenges', ['provider_id'], unique=False)
     op.create_index(op.f('ix_challenges_status'), 'challenges', ['status'], unique=False)
     op.create_index(op.f('ix_challenges_workflow_id'), 'challenges', ['workflow_id'], unique=False)
-    op.create_index('uq_challenges_open_provider_type', 'challenges', ['provider_id', 'challenge_type'], unique=True, sqlite_where=sa.text("status IN ('open', 'acknowledged', 'human_action_required')"), postgresql_where=sa.text("status IN ('open', 'acknowledged', 'human_action_required')"))
+    op.create_index('uq_challenges_open_provider_type', 'challenges', ['provider_id', 'challenge_type'], unique=True, sqlite_where=sa.text("status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"), postgresql_where=sa.text("status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"))
     op.create_table('secret_references',
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -160,7 +160,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_secret_references_provider_id'), table_name='secret_references')
     op.drop_index(op.f('ix_secret_references_candidate_id'), table_name='secret_references')
     op.drop_table('secret_references')
-    op.drop_index('uq_challenges_open_provider_type', table_name='challenges', sqlite_where=sa.text("status IN ('open', 'acknowledged', 'human_action_required')"), postgresql_where=sa.text("status IN ('open', 'acknowledged', 'human_action_required')"))
+    op.drop_index('uq_challenges_open_provider_type', table_name='challenges', sqlite_where=sa.text("status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"), postgresql_where=sa.text("status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"))
     op.drop_index(op.f('ix_challenges_workflow_id'), table_name='challenges')
     op.drop_index(op.f('ix_challenges_status'), table_name='challenges')
     op.drop_index(op.f('ix_challenges_provider_id'), table_name='challenges')
@@ -175,4 +175,15 @@ def downgrade() -> None:
     op.drop_table('auth_provider_states')
     op.drop_index(op.f('ix_auth_providers_candidate_id'), table_name='auth_providers')
     op.drop_table('auth_providers')
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute('DROP TYPE IF EXISTS "authprovidertype" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "authenticationmethod" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "authstate" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "browsersessionstatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "challengetype" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "challengestatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "challengeseverity" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "secrettype" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "secretreferencestatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "workflowstatus" CASCADE')
     # ### end Alembic commands ###

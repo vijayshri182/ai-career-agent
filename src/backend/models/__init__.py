@@ -47,6 +47,7 @@ from backend.models.challenge import (
     ChallengeType,
 )
 from backend.models.company import Company, CompanyVerificationStatus
+from backend.models.gate4e_ingestion import Gate4eIngestion, Gate4eProcessingStatus
 from backend.models.job import Job, JobStatus
 from backend.models.job_match import JobMatch, JobMatchStatus
 from backend.models.job_source import JobSource, JobSourceType
@@ -56,6 +57,13 @@ from backend.models.learning import (
     Recommendation,
     RecommendationKind,
     RecommendationStatus,
+)
+from backend.models.notification import (
+    Notification,
+    NotificationCategory,
+    NotificationChannel,
+    NotificationPreference,
+    NotificationStatus,
 )
 from backend.models.outreach import (
     OutreachChannel,
@@ -72,6 +80,11 @@ from backend.models.recruiter_contact import (
     ContactSourceType,
     ContactType,
     RecruiterContact,
+)
+from backend.models.recruiter_signal import (
+    RecruiterSignal,
+    RecruiterSignalStatus,
+    RecruiterSignalType,
 )
 from backend.models.resume import ParsedResume, Resume, ResumeStatus, ResumeType, ResumeVersion
 from backend.models.secret_reference import (
@@ -124,12 +137,19 @@ __all__ = [
     "Experience",
     "Feedback",
     "FeedbackOutcome",
+    "Gate4eIngestion",
+    "Gate4eProcessingStatus",
     "Job",
     "JobMatch",
     "JobMatchStatus",
     "JobSource",
     "JobSourceType",
     "JobStatus",
+    "Notification",
+    "NotificationCategory",
+    "NotificationChannel",
+    "NotificationPreference",
+    "NotificationStatus",
     "OutreachChannel",
     "OutreachMessage",
     "OutreachMessageVersion",
@@ -146,6 +166,9 @@ __all__ = [
     "RecommendationKind",
     "RecommendationStatus",
     "RecruiterContact",
+    "RecruiterSignal",
+    "RecruiterSignalStatus",
+    "RecruiterSignalType",
     "Resume",
     "ResumeStatus",
     "ResumeType",

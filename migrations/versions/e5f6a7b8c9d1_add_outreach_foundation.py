@@ -107,8 +107,8 @@ def upgrade() -> None:
         "outreach_runs",
         ["message_id"],
         unique=True,
-        sqlite_where=sa.text("status IN ('PENDING', 'RUNNING')"),
-        postgresql_where=sa.text("status IN ('PENDING', 'RUNNING')"),
+        sqlite_where=sa.text("status IN ('pending', 'running')"),
+        postgresql_where=sa.text("status IN ('pending', 'running')"),
     )
 
 

@@ -230,4 +230,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_audit_events_candidate_id'), table_name='audit_events')
     op.drop_index(op.f('ix_audit_events_actor_id'), table_name='audit_events')
     op.drop_table('audit_events')
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute('DROP TYPE IF EXISTS "profilestatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "skillcategory" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "proficiency" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "resumetype" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "resumestatus" CASCADE')
     # ### end Alembic commands ###

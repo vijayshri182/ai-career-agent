@@ -165,3 +165,9 @@ def downgrade() -> None:
                    postgresql_where=sa.text("verification_status = 'VERIFIED'"))
     op.drop_index('ix_companies_website_domain', table_name='companies')
     op.drop_table('companies')
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute('DROP TYPE IF EXISTS "companyverificationstatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "jobsourcetype" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "jobstatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "rawextractionstatus" CASCADE')
+        op.execute('DROP TYPE IF EXISTS "agenttaskstatus" CASCADE')

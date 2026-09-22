@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, ForeignKey, String, Text, Uuid
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship
 
 from backend.db.base import IdModel
@@ -71,7 +72,15 @@ class Application(IdModel, table=True):
             nullable=True,
         )
     )
-    status: ApplicationStatus = Field(default=ApplicationStatus.DRAFT)
+    status: ApplicationStatus = Field(
+        sa_column=Column(
+            SAEnum(ApplicationStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="draft",
+            index=True,
+        ),
+        default=ApplicationStatus.DRAFT,
+    )
     match_id: UUID | None = Field(
         sa_column=Column(Uuid(as_uuid=True), ForeignKey("job_matches.id"), nullable=True)
     )
@@ -99,7 +108,14 @@ class ApplicationQuestion(IdModel, table=True):
     application_id: UUID = Field(
         foreign_key="applications.id", nullable=False, index=True
     )
-    category: QuestionCategory = Field(default=QuestionCategory.OTHER)
+    category: QuestionCategory = Field(
+        sa_column=Column(
+            SAEnum(QuestionCategory, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="other",
+        ),
+        default=QuestionCategory.OTHER,
+    )
     question_text: str = Field(sa_column=Column(Text, nullable=False))
     source_hint: str | None = Field(sa_column=Column(String(128), nullable=True))
 
@@ -119,7 +135,14 @@ class ApplicationAnswer(IdModel, table=True):
     question_id: UUID = Field(
         foreign_key="application_questions.id", nullable=False, unique=True
     )
-    status: AnswerStatus = Field(default=AnswerStatus.REQUIRES_REVIEW)
+    status: AnswerStatus = Field(
+        sa_column=Column(
+            SAEnum(AnswerStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="requires_review",
+        ),
+        default=AnswerStatus.REQUIRES_REVIEW,
+    )
     answer_text: str = Field(sa_column=Column(Text, nullable=False, default=""))
     fact_sources: list[dict[str, object]] = Field(
         default_factory=list, sa_column=Column(JSON, default=list)
@@ -138,7 +161,14 @@ class ApplicationDocument(IdModel, table=True):
     application_id: UUID = Field(
         foreign_key="applications.id", nullable=False, index=True
     )
-    doc_type: DocumentType = Field(default=DocumentType.OTHER)
+    doc_type: DocumentType = Field(
+        sa_column=Column(
+            SAEnum(DocumentType, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="other",
+        ),
+        default=DocumentType.OTHER,
+    )
     title: str = Field(sa_column=Column(String(255), nullable=False))
     version_number: int = Field(default=1)
     is_generated: bool = Field(default=True)

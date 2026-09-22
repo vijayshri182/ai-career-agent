@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, Float, String
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship, UniqueConstraint
 
 from backend.db.base import IdModel
@@ -35,7 +36,15 @@ class JobMatch(IdModel, table=True):
     candidate_id: UUID = Field(foreign_key="candidates.id", nullable=False, index=True)
     job_id: UUID = Field(foreign_key="jobs.id", nullable=False, index=True)
 
-    status: JobMatchStatus = Field(default=JobMatchStatus.PENDING, index=True)
+    status: JobMatchStatus = Field(
+        sa_column=Column(
+            SAEnum(JobMatchStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="pending",
+            index=True,
+        ),
+        default=JobMatchStatus.PENDING,
+    )
     score: float = Field(sa_column=Column(Float, nullable=False))
     confidence: float = Field(sa_column=Column(Float, nullable=False))
     is_match: bool = Field(default=False, index=True)

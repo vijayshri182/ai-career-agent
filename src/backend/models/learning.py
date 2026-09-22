@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import JSON, Column, DateTime, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship, UniqueConstraint
 
 from backend.db.base import IdModel
@@ -53,7 +54,15 @@ class Feedback(IdModel, table=True):
     outreach_message_id: UUID | None = Field(
         foreign_key="outreach_messages.id", nullable=True, index=True
     )
-    outcome: FeedbackOutcome = Field(default=FeedbackOutcome.OTHER, index=True)
+    outcome: FeedbackOutcome = Field(
+        sa_column=Column(
+            SAEnum(FeedbackOutcome, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="OTHER",
+            index=True,
+        ),
+        default=FeedbackOutcome.OTHER,
+    )
     stage: str | None = Field(sa_column=Column(String(128), nullable=True))
     note: str | None = Field(sa_column=Column(Text, nullable=True))
     happened_at: datetime = Field(
@@ -106,11 +115,25 @@ class Recommendation(IdModel, table=True):
     )
 
     candidate_id: UUID = Field(foreign_key="candidates.id", nullable=False, index=True)
-    kind: RecommendationKind = Field(index=True)
+    kind: RecommendationKind = Field(
+        sa_column=Column(
+            SAEnum(RecommendationKind, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            index=True,
+        )
+    )
     source_key: str = Field(sa_column=Column(String(255), nullable=False))
     title: str = Field(sa_column=Column(String(255), nullable=False))
     detail: str = Field(sa_column=Column(Text, nullable=False))
     rationale: list[str] = Field(default_factory=list, sa_column=Column(JSON, default=list))
-    status: RecommendationStatus = Field(default=RecommendationStatus.ACTIVE, index=True)
+    status: RecommendationStatus = Field(
+        sa_column=Column(
+            SAEnum(RecommendationStatus, values_callable=lambda e: [m.value for m in e], native_enum=False),
+            nullable=False,
+            server_default="ACTIVE",
+            index=True,
+        ),
+        default=RecommendationStatus.ACTIVE,
+    )
 
     candidate: Optional["Candidate"] = Relationship(back_populates="recommendations")

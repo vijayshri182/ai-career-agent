@@ -75,10 +75,10 @@ class Challenge(IdModel, table=True):
             "challenge_type",
             unique=True,
             sqlite_where=text(
-                "status IN ('open', 'acknowledged', 'human_action_required')"
+                "status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"
             ),
             postgresql_where=text(
-                "status IN ('open', 'acknowledged', 'human_action_required')"
+                "status IN ('OPEN', 'ACKNOWLEDGED', 'HUMAN_ACTION_REQUIRED')"
             ),
         ),
     )
