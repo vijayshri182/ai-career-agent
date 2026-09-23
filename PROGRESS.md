@@ -9,9 +9,9 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `dc86cb3` (`build: tighten runtime deps (PyJWT direct, drop python-jose/ecdsa; infra extra; pytest 9)`) |
-| HEAD == origin/main | **No** — `main` is **ahead 11** of `origin/main` (`c76a98a` → `6128804` are pushed; the post-WS-13 commits are committed but **not yet pushed**; push happens as the final release step) |
-| Working tree | WO-21 release edits in progress upstream of `dc86cb3` |
+| HEAD SHA | `1ffc41c` (`docs: record phases 17-20 completion and verification evidence`) |
+| HEAD == origin/main | **Yes** — `main` is in sync with `origin/main` (`6128804` → `1ffc41c` pushed; release step complete) |
+| Working tree | Clean |
 
 ---
 
