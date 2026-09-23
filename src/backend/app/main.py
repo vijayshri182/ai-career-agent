@@ -17,12 +17,14 @@ from backend.api.v1.authentication import router as authentication_router
 from backend.api.v1.automation import router as automation_router
 from backend.api.v1.candidate import router as candidate_router
 from backend.api.v1.certifications import router as certifications_router
+from backend.api.v1.dashboard import router as dashboard_router
 from backend.api.v1.discoveries import router as discoveries_router
 from backend.api.v1.education import router as education_router
 from backend.api.v1.experience import router as experience_router
 from backend.api.v1.jobs import router as jobs_router
 from backend.api.v1.learning import router as learning_router
 from backend.api.v1.matching import router as matching_router
+from backend.api.v1.notifications import router as notifications_router
 from backend.api.v1.outreach import router as outreach_router
 from backend.api.v1.recruiter_contacts import router as recruiter_contacts_router
 from backend.api.v1.resumes import router as resumes_router
@@ -146,6 +148,8 @@ app.include_router(applications_router, prefix="/api/v1")
 app.include_router(approvals_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
 app.include_router(automation_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(recruiter_contacts_router, prefix="/api/v1")
 app.include_router(outreach_router, prefix="/api/v1")
+app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(learning_router, prefix="/api/v1")
