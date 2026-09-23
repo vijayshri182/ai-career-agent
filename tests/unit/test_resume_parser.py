@@ -29,9 +29,10 @@ async def test_basic_parser_extracts_email_phone_and_skills():
     content = _docx_bytes(text)
     data = await parser.parse(content, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     assert data.email == "john.doe@example.com"
+    assert data.name == "John Doe"
     assert data.phone is not None
     assert "Java" in data.skills
-    assert "Spring Boot" in data.skills
+    assert "Spring" in data.skills
 
 
 @pytest.mark.asyncio

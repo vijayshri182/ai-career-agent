@@ -215,8 +215,7 @@ class ResumeService:
                 raw_text=parsed_data.raw_text,
                 extracted_data=parsed_data.to_dict(),
                 status="pending",
-                confidence_score=None,
-                applied_fields=[],
+                confidence_score=parsed_data.confidence_score,
             )
         else:
             parsed = await self.parsed_repo.create(
@@ -224,6 +223,7 @@ class ResumeService:
                 raw_text=parsed_data.raw_text,
                 extracted_data=parsed_data.to_dict(),
                 status="pending",
+                confidence_score=parsed_data.confidence_score,
             )
 
         active_version = await self.version_repo.update(
@@ -301,17 +301,31 @@ class ResumeService:
 
         Only non-empty values are applied; existing profile data is never
         overwritten with blank extraction output and nothing is invented.
+        Cryptographic fields (email, phone, current_location) are handed to
+        ``CandidateRepository`` which applies the encryption layer.
         """
         mapping = {
             "name": "full_name",
             "email": "email",
             "phone": "phone",
+            "headline": "headline",
+            "current_role": "current_role",
             "summary": "summary",
+            "total_experience_years": "total_experience_years",
+            "current_location": "current_location",
         }
         changes: dict[str, object] = {}
         for source, target in mapping.items():
             value = extracted.get(source)
-            if isinstance(value, str) and value.strip():
+            if target == "total_experience_years":
+                if isinstance(value, int) and value > 0:
+                    changes[target] = value
+            elif target == "current_location":
+                if isinstance(value, dict) and any(
+                    isinstance(part, str) and part.strip() for part in value.values()
+                ):
+                    changes[target] = dict(value)
+            elif isinstance(value, str) and value.strip():
                 changes[target] = value.strip()
         return changes
 

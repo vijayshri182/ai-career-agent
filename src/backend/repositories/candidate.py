@@ -65,9 +65,12 @@ class CandidateRepository(BaseRepository[Candidate]):
             data["phone_encrypted"] = None
 
         if "current_location" in data:
+            # The `current_location` property decrypts the column value a second
+            # time, so like email/phone this is stored with an outer ciphertext
+            # layer that balances the property's extra decrypt.
             location = data.pop("current_location")
             data["current_location_json"] = (
-                json.dumps(location) if location is not None else None
+                self.security.encrypt(json.dumps(location)) if location is not None else None
             )
         return data
 

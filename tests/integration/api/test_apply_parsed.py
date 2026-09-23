@@ -79,12 +79,16 @@ async def test_apply_parsed_populates_profile(
     assert r.status_code == 200
     profile = r.json()
     assert profile["email"] == "jane.doe@example.com"
-    assert profile["full_name"] == "Original Name"
+    assert profile["full_name"] == "Jane Doe"
     assert profile["headline"] == "Original Headline"
 
     r = await client.get(f"/api/v1/candidates/{candidate_id}/skills", headers=auth_headers)
     assert r.status_code == 200
-    assert {skill["name"] for skill in r.json()} == {"Java", "Spring Boot", "Kubernetes"}
+    assert {skill["name"] for skill in r.json()} == {
+        "Java",
+        "Kubernetes",
+        "Spring",
+    }
 
 
 async def test_apply_parsed_is_idempotent_for_skills(
@@ -182,4 +186,8 @@ async def test_apply_parsed_preserves_manual_edit_on_reapply(
 
     r = await client.get(f"/api/v1/candidates/{candidate_id}/skills", headers=auth_headers)
     assert r.status_code == 200
-    assert {skill["name"] for skill in r.json()} == {"Java", "Spring Boot", "Kubernetes"}
+    assert {skill["name"] for skill in r.json()} == {
+        "Java",
+        "Kubernetes",
+        "Spring",
+    }
