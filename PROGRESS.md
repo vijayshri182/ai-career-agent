@@ -9,9 +9,9 @@
 |-------|-------|
 | Repository | `vijayshri182/ai-career-agent` (`git@github.com:vijayshri182/ai-career-agent.git`) |
 | Current branch | `main` |
-| HEAD SHA | `c76a98a` (`feat: implement outreach engine (phase 9)`) |
-| HEAD == origin/main | **Yes** |
-| Upstream | `main` tracks `origin/main`, even |
+| HEAD SHA | `dc86cb3` (`build: tighten runtime deps (PyJWT direct, drop python-jose/ecdsa; infra extra; pytest 9)`) |
+| HEAD == origin/main | **No** — `main` is **ahead 11** of `origin/main` (`c76a98a` → `6128804` are pushed; the post-WS-13 commits are committed but **not yet pushed**; push happens as the final release step) |
+| Working tree | WO-21 release edits in progress upstream of `dc86cb3` |
 
 ---
 
@@ -32,6 +32,16 @@
 | WS-10 | Phase 5/7 — Permitted Application Automation (automation runs, policy gates, challenge handoff, retries, API) | Complete; committed + pushed | `89da2fc` `feat: implement permitted application automation` |
 | WS-11 | Phase 8 — Recruiter Contact Discovery (contact sources + contacts, confidence scoring, privacy-safe discovery service, APIs, migration, tests) | Complete; committed + pushed | `970f449` `feat: implement recruiter contact discovery` |
 | WS-12 | Phase 9 — Outreach Engine (writer grounded on verified facts, approval-gated send, runs, follow-ups, candidate-scoped API, tests) | Complete; committed + pushed | `c76a98a` `feat: implement outreach engine (phase 9)` |
+| WS-13 | Phase 12 — Learning & Analytics (feedback, recommendations, analytics summary, fairness guard) | Complete; committed + pushed | `6128804` `feat: implement learning & analytics engine (phase 12)` |
+| WS-13.5 | Feasibility checkpoint — LinkedIn/Gmail integration boundaries (docs-only, ADR-010) | Complete; committed + pushed | `e9ec159` `docs: record LinkedIn Gmail integration boundaries` |
+| WS-14 | Gate4e ingestion → dedup/quarantine → candidate ownership → eligibility → read-only evaluation (CP13–CP15) | Complete; committed (unpushed) | `fa6a0f7` `feat: gate4e ingestion, eligibility, and evaluation pipeline` |
+| WS-15 | Recruiter signal pipeline: generation, quality, human approval, grounded outreach prep (CP16–CP20) | Complete; committed (unpushed) | `3b0aa30` `feat: recruiter signal pipeline (generation, quality, approval, outreach prep)` |
+| WS-16 | Phase 10 — Notifications + dashboard observability + matching notifier wiring; DB at-most-once guards; full E2E proof (outbound = 0) | Complete; committed (unpushed) | `6a1b89d` `feat: notifications, dashboard observability, and matching notifier wiring` |
+| WS-17 | Enum + index parity across string-backed status columns (PostgreSQL) | Complete; committed (unpushed) | `ce043e7` `fix: enum and index parity across string-backed status columns` |
+| WS-18 | Observability — candidate-scoped audit read API + structured JSON logging | Complete; committed (unpushed) | `033f554` `feat: observability (audit read API, structured JSON logging)` |
+| WS-19 | Job-source routing + Adzuna adapter; production `SECRET_KEY` guard | Complete; committed (unpushed) | `306901d` `feat: job-source routing and Adzuna adapter; production secret guard` |
+| WS-20 | Deterministic AI boundary (ADR-011, zero AI SDKs), verification evidence, clean-env validation; migration `f6e5d4c3b2a1` index parity | Complete; committed (unpushed) | `a86bce3` `chore: deterministic AI boundary, docs, verification evidence, clean-env` |
+| WS-21 | Phase 17 — release documentation + ADR alignment; Phases 18–20 (clean-env validation, final regression, security/supply-chain audit, release evidence) | Complete; committed (unpushed) | `ec6a5c2` `docs: align runtime docs and ADRs with deterministic v1.0 scope (ADR-011)`; `54177af` `fix: mount notifications and dashboard v1 routers; pin API surface contract`; `dc86cb3` `build: tighten runtime deps (PyJWT direct, drop python-jose/ecdsa; infra extra; pytest 9)`; + release-evidence commit |
 
 ---
 
@@ -654,11 +664,13 @@ UUID objects; `total` counts must honor the outcome/status/kind filters.
 
 ## Next Workstream
 
-1. **WS-14 — Phase 10 Notifications/Dashboard** — pending.
-2. Then: Phase 11 24×7 Orchestration, Phase 13 Production Hardening, frontend dashboard completion,
-   final QA.
+1. **WS-21 (in progress) — Phase 17–20 release completion:**
+   1. Phase 17 — documentation consistency + ADR alignment (ADR-011 Accepted, ADR-005 superseded, ADR-002/003 aligned; README / ROADMAP / PROGRESS / evidence / api-overview updated).
+   2. Phase 18 — clean-environment validation (fresh venv, dependency install, PostgreSQL from empty DB via Alembic, startup health/readiness, API surface vs docs, persisted Gate4e validation; Redis documented as not required; scheduler OFF).
+   3. Phase 19 — final regression (`pytest tests -q`, `ruff check src tests`, `mypy src`), AI/LLM boundary scan, prompt-injection audit, outbound-safety and scheduler final checks, dependency/migration final review.
+   4. Phase 20 — release evidence + Git hygiene; logical commits; push to `origin/main` only after full validation; final completion report.
 
 ## Next Workstream Status
 
 - Approved: **auto-continue per mission directive** (finish the product end-to-end).
-- Started: **NO** — WS-13 checkpoint committed and verified; WS-14 begins next.
+- Started: **YES** — Phases 17–20 release completion is underway (see also `docs/verification/evidence.md`, `docs/adr/adr-011-deterministic-only-runtime.md`, `ROADMAP.md`).
