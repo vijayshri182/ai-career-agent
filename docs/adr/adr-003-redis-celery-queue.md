@@ -2,11 +2,19 @@
 
 ## Status
 
-Proposed
+Deferred (not required in v1.0; in-process scheduler, OFF by default)
 
 ## Context
 
 The agent workflows are asynchronous and must run 24×7. We need a task queue, distributed locking, retries, and a scheduler for periodic discovery/matching runs.
+
+## Current Implementation (v1.0)
+
+No Redis or Celery is deployed or required. Scheduling is an **in-process
+scheduler** that is **OFF by default** (`DISCOVERY_ENABLED` defaults to `false`)
+and `inert until started`; activation is a separate operational approval. The
+discovery/matching pipeline runs as direct, awaited service calls with idempotency
+and at-most-once guards. See [ADR-011 — Deterministic-Only Runtime](adr-011-deterministic-only-runtime.md).
 
 ## Decision
 

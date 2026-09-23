@@ -110,6 +110,11 @@ human-in-the-loop `WorkflowRun`). Key invariants:
 
 ## 4. 24×7 Scheduler & Queue Architecture
 
+> **Current implementation (v1.0):** scheduling is in-process and **OFF by default**
+> (`DISCOVERY_ENABLED=false`); there is no Redis queue or Celery worker pool. The
+> diagram below is the **target** queue architecture (see
+> [ADR-003](docs/adr/adr-003-redis-celery-queue.md) — deferred).
+
 ```mermaid
 flowchart LR
     S[Scheduler / Celery Beat]
@@ -125,7 +130,7 @@ flowchart LR
     W -->|exhausted| DLQ
 ```
 
-* **Scheduler:** Periodic discovery, verification, and matching runs.
+* **Scheduler:** Periodic discovery, verification, and matching runs (target: Celery Beat; today: in-process scheduler, inert until started).
 * **Queue:** Redis-backed task queue; task IDs are deterministic to support idempotency.
 * **Workers:** Celery workers that execute agents.
 * **Dead-letter queue:** Captures permanently failed tasks for review.
@@ -282,7 +287,7 @@ flowchart LR
 * **PostgreSQL:** Canonical source for profile, jobs, applications, contacts, approvals, audit events.
 * **pgvector:** Embeddings for semantic job/profile matching and RAG — **deferred**; no embeddings/vector columns exist in the current implementation (matching is a deterministic rule-based scorer).
 * **Object store:** Resume PDFs, cover letters, supporting documents.
-* **Redis:** Queue, cache, session store — declared; optional at runtime today.
+* **Redis:** Queue, cache, session store — optional `[infra]` extra; not used at runtime today.
 * **Audit log stream:** Append-only record of decisions and security events (initially a database table; later a dedicated log store).
 
 ## 12. Security / Trust Boundaries
@@ -326,7 +331,7 @@ See [`SECURITY.md`](SECURITY.md) for the complete security model.
 | Backend | Python + FastAPI | Fast, async, excellent typing, large AI ecosystem. |
 | Frontend | Next.js (React) | SSR/SSG, strong ecosystem, easy Vercel/cloud deployment. |
 | Database | PostgreSQL (pgvector deferred) | Mature, relational integrity; vector search later if semantic matching lands. |
-| Queue / Cache | Redis + Celery | Declared; optional at runtime today (scheduler is in-process and OFF by default). |
+| Queue / Cache | Redis + Celery | Optional `[infra]` extra; not required at runtime (scheduler is in-process and OFF by default). |
 | Browser automation | Playwright | Declared; unused by the current recording-only pipeline. |
 | LLM abstraction | None (deferred) | All intelligence deterministic; LangChain/LangGraph and AI SDKs not installed. |
 | Auth | OAuth2 / OIDC | Delegated identity, no password storage. |

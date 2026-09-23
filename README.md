@@ -2,15 +2,17 @@
 
 A privacy-first, human-in-the-loop AI system that continuously discovers relevant job opportunities, verifies their legitimacy, evaluates fit against a professional profile, prepares tailored application materials, and tracks the entire job-search lifecycle.
 
-> **Status:** Phases 1–15 of the master plan are complete and exercised through
+> **Status:** Master-plan Phases 1–16 are complete and exercised through
 > unit + integration tests on both SQLite (test suite) and PostgreSQL 16 (validated
 > end-to-end). Highlights: candidate profile + auth/challenges foundation; deterministic
 > AI job matching; fact-grounded application prep; job-source strategy with an optional,
 > credential-gated Adzuna adapter; ingestion safety (quarantine, idempotent replay);
-> recruiter-signal pipeline; outreach with a **recording sender only (outbound = 0)**,
-> candidate-scoped approvals + audit-trail API, and structured JSON logging. The
-> scheduler is OFF by default, no AI/LLM SDKs are installed (the AI boundary is enforced
-> at the dependency level), and no external AI calls are made.
+> recruiter-signal pipeline; outreach with a **recording sender only (outbound = 0)**;
+> candidate-scoped approvals + audit-trail API; structured JSON logging; failure recovery
+> (DB-level at-most-once guards); security review and maintenance; AI/LLM boundary; scheduler
+> OFF by default; and index-parity/performance sanity. The scheduler is OFF by default, no
+> AI/LLM SDKs are declared or installed (the AI boundary is enforced at the dependency level),
+> and no external AI calls are made.
 
 ## Vision
 
@@ -68,7 +70,7 @@ The backend foundation for the Candidate Profile Service is implemented in `src/
 Database migrations live in `migrations/` (Alembic, async template). Run them with:
 
 ```bash
-alembic upgrade head
+alembic upgrade head    # current head: f6e5d4c3b2a1
 ```
 
 Run the API locally:
@@ -125,10 +127,10 @@ The system is being built for **Vijay Shrivastava**. The candidate profile will 
 
 * **Backend:** Python + FastAPI
 * **Frontend:** Next.js (React)
-* **Database:** PostgreSQL 16 (pgvector deferred — no embeddings today)
-* **Queue / Cache:** Redis + Celery (declared; not required at runtime — scheduler is in-process and OFF by default)
-* **Browser automation:** Playwright (declared; unused at runtime today)
-* **LLM abstraction:** None. All intelligence is deterministic; LangChain/LangGraph and all AI SDKs are deferred (and not installed). See [`docs/adr/`](docs/adr/).
+* **Database:** PostgreSQL 16 (pgvector not in the declared runtime — matching is rule-based, no embeddings)
+* **Queue / Cache:** Redis + Celery (optional `[infra]` extra; not required at runtime — scheduler is in-process and OFF by default)
+* **Browser automation:** Playwright (optional `[infra]` extra; unused at runtime today)
+* **LLM abstraction:** None. All intelligence is deterministic; LangChain/LangGraph, `pgvector` and all AI SDKs have been **removed from `pyproject.toml`** (the AI boundary is enforced at the dependency level). See [`docs/adr/`](docs/adr/).
 * **Auth:** OAuth2 / OIDC
 * **Document storage:** S3-compatible object store (local storage provider by default)
 * **Deployment:** Docker, cloud-ready (initial target: container platform)
@@ -250,4 +252,22 @@ POST /api/v1/candidates/{candidate_id}/applications/{application_id}/status?stat
 ## 24×7 Operation
 
 An event/queue-based scheduler runs continuously in the cloud. Jobs are discovered, verified, matched, and prepared asynchronously. Human approvals pause external actions. Retries, dead-letter queues, health checks, and idempotency ensure resilience.
+
+## Observability (audit trail & logging)
+
+* **Audit-trail API** — candidate-scoped, read-only listing of audit events with
+  `event_type` / `limit` / `offset` filtering:
+
+  ```text
+  GET /api/v1/candidates/{candidate_id}/audit-events?event_type=&limit=&offset=
+  ```
+
+  Ownership is enforced via `get_owned_candidate` (cross-user 404) and re-checked in the
+  service. Evidence: `tests/integration/api/test_audit.py`.
+* **Structured logging** — JSON logging is configured at bootstrap
+  (`backend/core/logging_utils.py`, `LOG_LEVEL`); the in-process scheduler emits structured
+  events. Evidence: `tests/unit/test_logging.py`.
+* **Performance** — model-declared indexes align with the real PG schema (migration
+  `f6e5d4c3b2a1` restored `ix_outreach_messages_parent_id` and `ix_outreach_runs_status`;
+  audit script reports `ALL DECLARED INDEXES PRESENT` on both PG databases).
 

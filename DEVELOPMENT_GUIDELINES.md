@@ -12,7 +12,7 @@
 * **Backend:** Python 3.12+, FastAPI, Pydantic v2, SQLModel or SQLAlchemy, Alembic.
 * **Frontend:** Next.js 14+ (App Router), TypeScript, Tailwind CSS.
 * **Database:** PostgreSQL 15+ (pgvector deferred; no embeddings in the current implementation).
-* **Queue/Workers:** Redis, Celery, Celery Beat (declared; optional at runtime today).
+* **Queue/Workers:** Redis, Celery, Celery Beat (optional `[infra]` extra; not required at runtime today).
 * **Browser automation:** Playwright (Python) (declared; unused by the current pipeline).
 * **LLM:** None installed. All intelligence is deterministic; LangChain/LangGraph and AI SDKs are deferred. Do not add AI SDKs without an ADR + explicit approval.
 * **Testing:** pytest, Playwright Test, Jest, React Testing Library.
@@ -63,7 +63,7 @@ ai-career-agent/
 * `src/backend/repositories/` — Database access.
 * `src/backend/api/` — HTTP routers.
 * `src/backend/core/` — Config, security, logging.
-* `src/agent_workers/` — Celery worker entrypoints.
+* `src/agent_workers/` — reserved for future worker entrypoints (currently empty; Celery is not used in v1.0 — the scheduler is in-process and OFF by default).
 * `src/shared/` — Contracts, types, utilities shared between backend/frontend.
 
 ## 5. Configuration
@@ -125,15 +125,21 @@ ai-career-agent/
 4. Ensure CI passes (lint, tests, secret scan).
 5. Request review; merge via squash or merge commit as configured.
 
-## 12. Local Development Setup (Future)
+## 12. Local Development Setup
 
 ```bash
-# After code is added in later phases
-cp config/.env.example .env
-# fill secrets via vault / local values
-docker-compose up -d db redis
-pytest
+# From the repository root, with PostgreSQL 16 running locally:
+copy config\.env.example .env
+# fill in DATABASE_URL / SECRET_KEY / ENCRYPTION_KEY
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.venv\Scripts\alembic.exe upgrade head      # current head: f6e5d4c3b2a1
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload
+.venv\Scripts\python.exe -m pytest
 ```
+
+Redis/Celery are **not** required for local development (scheduler in-process, OFF by
+default). `docker-compose up -d db redis` is available but only PostgreSQL is needed.
 
 ## 13. Operational Runbooks
 

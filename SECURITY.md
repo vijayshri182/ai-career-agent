@@ -1,5 +1,15 @@
 # AI Career Agent — Security Architecture
 
+> **Current implementation (v1.0):** the runtime is **deterministic-only**
+> ([ADR-011](docs/adr/adr-011-deterministic-only-runtime.md)) with no external model
+> calls and zero AI SDKs installed. PostgreSQL is the only required store; Redis,
+> secret-vault, object store, and browser-automation infrastructure are **declared but
+> not required** at runtime (the scheduler is in-process and OFF by default; outreach
+> uses a recording sender only, outbound = 0). Sections below that reference vaults,
+> Redis sessions, LLM prompt handling, browser isolation, or object stores therefore
+> describe the security controls that bind when those components are added — they are
+> not claims about the v1.0 runtime.
+
 ## 1. Security Goals
 
 * Protect candidate PII, resumes, and credentials.

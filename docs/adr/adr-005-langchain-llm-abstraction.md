@@ -2,7 +2,12 @@
 
 ## Status
 
-Deferred (not implemented)
+Superseded
+
+> Superseded by [ADR-011 — Deterministic-Only Runtime](adr-011-deterministic-only-runtime.md)
+
+This ADR is retained for history. The project does **not** use LangChain, LangGraph,
+or any LLM provider SDK; see ADR-011 for the governing runtime decision.
 
 ## Context
 

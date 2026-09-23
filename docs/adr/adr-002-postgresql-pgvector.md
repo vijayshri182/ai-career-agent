@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for PostgreSQL; pgvector deferred
+Accepted for PostgreSQL; pgvector deferred (dependency removed; see ADR-011)
 
 ## Context
 
@@ -10,10 +10,12 @@ The system needs a relational store for profiles, jobs, applications, approvals,
 
 ## Current Implementation (v0.1.0)
 
-PostgreSQL 16 is the primary store (migrations at `migrations/`). Vector search is
-**not** active: the `pgvector` extension is not used, no embedding columns exist, and
-matching is deterministic rule-based scoring. If semantic matching is added later, the
-pgvector decision below applies; until then embeddings are out of scope.
+PostgreSQL 16 is the primary store (migrations at `migrations/`, head
+`f6e5d4c3b2a1`). Vector search is **not** active and is out of scope: the `pgvector`
+extension is not used, no embedding columns exist, matching is deterministic
+rule-based scoring, and the `pgvector` dependency has been removed from the project
+dependencies. See [ADR-011 — Deterministic-Only Runtime](adr-011-deterministic-only-runtime.md)
+for the governing runtime decision.
 
 ## Decision
 

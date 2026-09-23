@@ -5,7 +5,7 @@ flowchart TB
     User([User])
     Dashboard[Web Dashboard<br/>Next.js + React]
     Gateway[API Gateway<br/>FastAPI]
-    Orchestrator[Agent Orchestrator]
+    Orchestrator[Agent Orchestrator — declared, future]
 
     subgraph Agents
         ProfileAgent[Profile Agent]
@@ -53,7 +53,9 @@ flowchart TB
 1. The user interacts with the Next.js dashboard.
 2. The dashboard calls the FastAPI gateway.
 3. The gateway routes to services or triggers the orchestrator.
-4. The orchestrator dispatches agents to Celery workers.
+4. Services run the deterministic pipeline directly (in-process). The Agent
+   Orchestrator and Celery workers are **declared (future)**; they are not part of the
+   v1.0 runtime.
 5. Agents use tools (HTTP, Playwright, email) and data stores.
 6. The LLM abstraction layer and pgvector vector store are **deferred**; today all
    generation, matching, and analysis is deterministic and network-free for AI content.

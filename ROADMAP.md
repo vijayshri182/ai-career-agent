@@ -4,13 +4,27 @@ This roadmap breaks the project into self-contained phases. Each phase defines o
 
 ## Current Status (master plan)
 
+### Completed
+
 * **Phases 0–5, 1.5, 9, 12** — implemented and exercised by unit + integration tests.
 * **Phase 6 (Human Approval)** — backend approvals/decisions + candidate-scoped list/detail/decide endpoints and audit trail are implemented; dashboard UI remains.
 * **Phase 7 (Application Automation)** — foundation implemented (run state machine, retry/backoff, challenge hand-off gates); actual site submission is a future increment and never executes today.
 * **Phase 8 (Contact Discovery)** — service + APIs implemented with public-evidence-only rules (no guessed emails; confidence threshold).
 * **Phase 10 (Dashboard + Notifications)** — services + APIs implemented (gated by feature flags); no external channels today.
-* **Phases 3, 11, 13** — remain future work (job verification depth, cloud deployment, production hardening).
-* Cross-cutting: ingestion safety + dedup + signals + outreach safety + observability (audit read API, structured JSON logging) + failure recovery (DB-level at-most-once guards) + security review (SECRET_KEY production guard) + AI/LLM boundary (zero AI SDKs installed; deterministic only) + scheduler OFF by default. See [`docs/verification/evidence.md`](docs/verification/evidence.md).
+* **Phase 14 (Data & Backend robustness)** — Gate4e pipeline (ingestion, candidate ownership, dedup, quarantine, eligibility, recruiter signals, quality, human approval, application prep, audit trail) with zero actual outbound.
+* **Phase 15 (Operational hardening)** — scheduler OFF by default (inert until activated), AI/LLM dependency boundary (zero AI SDKs in `pyproject.toml`), candidate ownership + CORS + secrets review, production `SECRET_KEY` guard.
+* **Phase 16 (Performance & observability)** — index parity with the data model on PostgreSQL (migration head `f6e5d4c3b2a1`), structured JSON logging, candidate-scoped audit read API, DB-level at-most-once guards, retry/backoff/budgeting.
+* **Deterministic-Only Runtime (ADR-011, Accepted 22-Sep-2026)** — runtime authority is deterministic, tested code; AI use (if any) is bounded assistance with untrusted output and no policy/authorization/outbound authority. Supersedes ADR-005.
+
+### Remaining
+
+* **Phase 3 (Job Verification depth)** — future work.
+* **Phase 11 (24×7 cloud deployment)** — future work.
+* **Phase 13 (Production hardening)** — future work (data export/delete endpoints, pen testing, runbooks).
+* **Phase 6/10 interactive UI** (dashboard approval screens, notifications UI) — future frontend increments.
+* **Phase 7 (7) actual site submission** — future increment; never executes today.
+
+Cross-cutting evidence: ingestion safety + dedup + signals + outreach safety + observability + failure recovery + security review + AI/LLM boundary + scheduler OFF by default + index parity. See [`docs/verification/evidence.md`](docs/verification/evidence.md).
 
 ## Legend
 

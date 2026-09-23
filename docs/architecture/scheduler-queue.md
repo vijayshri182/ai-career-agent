@@ -1,5 +1,13 @@
 # Scheduler and Queue Architecture
 
+> **Current implementation (v1.0):** no Redis, Celery, or dead-letter queue is
+> deployed or required. Scheduling is an **in-process scheduler that is OFF by default**
+> (`DISCOVERY_ENABLED=false`) and inert until explicitly activated; activation is a
+> separate operational approval. Trigger types and resilience guarantees below therefore
+> apply through deterministic, directly-called services plus retry/backoff and DB-level
+> at-most-once guards. The diagram below and the queue-based controls describe the
+> **target** queue architecture (see [ADR-003](adr-003-redis-celery-queue.md) — deferred).
+
 The system operates continuously through a combination of scheduled triggers, event-driven tasks, queue-based execution, and retry policies.
 
 ## Components

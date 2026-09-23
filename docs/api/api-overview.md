@@ -22,16 +22,24 @@ Content-Type: application/json
 
 | Area | Prefix | Description |
 |------|--------|-------------|
-| Profiles | `/profiles` | Candidate profile and resume versions. |
-| Jobs | `/jobs` | Discovered and verified jobs. |
-| Matches | `/matches` | Match scores and explanations. |
-| Applications | `/applications` | Application preparation and lifecycle. |
-| Approvals | `/approvals` | Human approval requests and decisions. |
-| Outreach | `/outreach` | Recruiter outreach drafts and sends. |
-| Contacts | `/recruiter-contacts` | Discovered recruiting contacts. |
-| Dashboard | `/dashboard` | Summary and analytics. |
-| Notifications | `/notifications` | User notifications. |
-| Agent tasks | `/agent-tasks` | Trigger and inspect agent runs. |
+| Auth | `/auth` | Register, login, `me`. |
+| Candidates | `/candidates/{candidate_id}` | Profile, skills, experience, education, certifications. |
+| Resumes | `/candidates/{candidate_id}/resumes` | Resume containers, versions, parsing. |
+| Sources | `/candidates/{candidate_id}/sources` | Job sources / discovery config. |
+| Jobs | `/candidates/{candidate_id}/jobs` | Discovered jobs. |
+| Matching | `/candidates/{candidate_id}/matching` | Match evaluation, lists, explanations. |
+| Applications | `/candidates/{candidate_id}/applications` | Preparation and lifecycle. |
+| Approvals | `/candidates/{candidate_id}/approvals` | Human approval requests and decisions. |
+| Audit | `/candidates/{candidate_id}/audit-events` | Candidate-scoped audit trail read API. |
+| Outreach | `/candidates/{candidate_id}/outreach` | Recruiter outreach drafts, submits, sends. |
+| Contacts | `/candidates/{candidate_id}/recruiter-contacts` | Discovered recruiting contacts. |
+| Dashboard | `/candidates/{candidate_id}/dashboard` | Summary and analytics. |
+| Notifications | `/candidates/{candidate_id}/notifications` | User notifications and preferences. |
+| Automation | `/candidates/{candidate_id}/automation` | Recorded application-automation runs (submission is a future phase). |
+| Discovery runs | `/candidates/{candidate_id}/discovery-runs` | Trigger and list discovery runs (agent-task outcomes). |
+
+Caveat: every candidate-scoped route resolves ownership through `get_owned_candidate`,
+so cross-user or non-existent candidates are indistinguishable (404).
 
 ## Response Envelope
 
@@ -64,12 +72,13 @@ Content-Type: application/json
 
 ## OpenAPI
 
-FastAPI auto-generates OpenAPI docs at `/docs` and `/openapi.json` once the application is implemented.
+FastAPI auto-generates OpenAPI docs at `/api/docs` and `/api/openapi.json`.
 
 ## Rate Limits
 
-* Authenticated: 100 requests/minute per user.
-* Public health: 10 requests/minute per IP.
+Not currently enforced at the middleware level. The planned model is
+authenticated 100 requests/minute per user and a tight per-IP cap on public
+health endpoints; revisit before production exposure.
 
 ## Status Codes
 

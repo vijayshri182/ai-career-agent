@@ -249,9 +249,12 @@ Each agent run produces:
 
 ## 11. Scheduling
 
-* Celery Beat runs periodic schedules defined in `config/schedules.yaml`.
-* Sources can be enabled/disabled and have custom cadences.
-* Manual triggers are available via API for testing.
+* **Current implementation:** an in-process scheduler that is **OFF by default**
+  (`DISCOVERY_ENABLED=false`) and inert until explicitly started; runs are bounded by
+  idempotency and at-most-once guards. Sources can be enabled/disabled per run; manual
+  triggers are available via API.
+* **Declared (future):** Celery Beat running periodic schedules defined in
+  `config/schedules.yaml` (not present in v1.0).
 
 ## 12. Human Approval Workflow
 
