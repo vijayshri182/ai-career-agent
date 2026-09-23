@@ -53,14 +53,16 @@ class CandidateRepository(BaseRepository[Candidate]):
             data["email_encrypted"] = None
             data["email_hash"] = None
 
-        # The model maps the API field `phone` to the encrypted storage
-        # column `phone_encrypted`; rename it but keep plaintext. All
-        # EncryptedString columns (full_name, headline, summary,
-        # phone_encrypted, current_location_json) encrypt/decrypt
-        # automatically via the ORM TypeDecorator, so never manually
-        # encrypt here.
-        if "phone" in data:
-            data["phone_encrypted"] = data.pop("phone")
+        # The model exposes `email` and `phone` through properties that
+        # decrypt a second time, so these two fields are stored with an
+        # outer encryption layer here, while the EncryptedString column
+        # type adds the inner layer on bind. Matching layers let the
+        # properties return plaintext.
+        if "phone" in data and data["phone"] is not None:
+            plain_phone = str(data.pop("phone"))
+            data["phone_encrypted"] = self.security.encrypt(plain_phone)
+        elif "phone" in data:
+            data["phone_encrypted"] = None
 
         if "current_location" in data:
             location = data.pop("current_location")

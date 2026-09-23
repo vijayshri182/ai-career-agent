@@ -53,7 +53,7 @@ class Candidate(IdModel, table=True):
     full_name: str | None = Field(sa_column=Column(EncryptedString(255), nullable=True))
     email_hash: str | None = Field(sa_column=Column(String(64), index=True, nullable=True))
     email_encrypted: str | None = Field(sa_column=Column(EncryptedString(512), nullable=True))
-    phone_encrypted: str | None = Field(sa_column=Column(EncryptedString(64), nullable=True))
+    phone_encrypted: str | None = Field(sa_column=Column(EncryptedString(512), nullable=True))
 
     headline: str | None = Field(sa_column=Column(EncryptedString(255), nullable=True))
     summary: str | None = Field(sa_column=Column(EncryptedString(4000), nullable=True))
